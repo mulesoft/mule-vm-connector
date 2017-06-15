@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+
+    <flow name="listener">
+        <vm:listener queueName="queue" queueType="TRANSIENT">
+            <vm:response>
+                <vm:body>
+                    #[lower(payload.salute)]
+                </vm:body>
+            </vm:response>
+        </vm:listener>
+        <logger />
+    </flow>
+
+    <flow name="failListener">
+        <vm:listener queueName="failQueue" queueType="TRANSIENT" />
+        <custom-processor class="org.mule.extensions.vm.test.VMPublishConsumeTestCase$FailureProcessor" />
+    </flow>
+
+    <flow name="publishConsume">
+        <vm:publish-consume queueName="queue" />
+    </flow>
+    
+    <flow name="unexistingPublishConsume">
+        <vm:publish-consume queueName="nowhere" />
+    </flow>
+
+    <flow name="failingPublishConsume">
+        <vm:publish-consume queueName="failQueue" />
+    </flow>
+
+</mule>
