@@ -37,6 +37,12 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
+/**
+ * Basic connector operations
+ *
+ * @since 1.0
+ */
+// TODO: MULE-13111
 public class VMOperations implements Startable, Stoppable {
 
   @Inject

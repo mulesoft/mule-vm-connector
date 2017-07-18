@@ -54,13 +54,7 @@ public class VMPublishConsumeTestCase extends VMTestCase {
 
   @Test
   public void publishConsumeStream() throws Exception {
-    TypedValue<byte[]> payload = flowRunner("publishConsume")
-        .withPayload(new ByteArrayInputStream(JSON_PAYLOAD.getBytes()))
-        .withMediaType(APPLICATION_JSON)
-        .run().getMessage().getPayload();
-
-    assertThat(new String(payload.getValue()), is(asJson(STRING_PAYLOAD.toLowerCase())));
-    assertThat(payload.getDataType().getMediaType().matches(JSON_STRING.getMediaType()), is(true));
+    assertPublishConsume("publishConsume");
   }
 
   @Test
@@ -79,6 +73,16 @@ public class VMPublishConsumeTestCase extends VMTestCase {
   }
 
   @Test
+  public void onErrorContinue() throws Exception {
+    assertPublishConsume("onErrorContinue");
+  }
+
+  @Test
+  public void onErrorPropagate() throws Exception {
+    runAndExpect("onErrorPropagate", errorType(VM_ERROR_NAMESPACE, QUEUE_TIMEOUT.name()));
+  }
+
+  @Test
   public void unexistingPublishConsume() throws Exception {
     runAndExpect("unexistingPublishConsume", errorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name()));
   }
@@ -86,6 +90,16 @@ public class VMPublishConsumeTestCase extends VMTestCase {
   @Test
   public void publishToFailingQueue() throws Exception {
     runAndExpect("failingPublishConsume", errorType(VM_ERROR_NAMESPACE, QUEUE_TIMEOUT.name()));
+  }
+
+  private void assertPublishConsume(String flowName) throws Exception {
+    TypedValue<byte[]> payload = flowRunner(flowName)
+        .withPayload(new ByteArrayInputStream(JSON_PAYLOAD.getBytes()))
+        .withMediaType(APPLICATION_JSON)
+        .run().getMessage().getPayload();
+
+    assertThat(new String(payload.getValue()), is(asJson(STRING_PAYLOAD.toLowerCase())));
+    assertThat(payload.getDataType().getMediaType().matches(JSON_STRING.getMediaType()), is(true));
   }
 
   private String asJson(String value) {

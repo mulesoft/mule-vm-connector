@@ -22,6 +22,7 @@ import org.mule.runtime.core.api.scheduler.SchedulerConfig;
 import org.mule.runtime.core.api.scheduler.SchedulerService;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.Alias;
+import org.mule.runtime.extension.api.annotation.execution.OnError;
 import org.mule.runtime.extension.api.annotation.execution.OnSuccess;
 import org.mule.runtime.extension.api.annotation.execution.OnTerminate;
 import org.mule.runtime.extension.api.annotation.param.Connection;
@@ -127,6 +128,11 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         LOGGER.warn("Could not send response to replyTo queue '{}' because it does not exists", replyTo);
       }
     });
+  }
+
+  @OnError
+  public void onError(Error error) {
+    error.toString();
   }
 
   // TODO: MULE-13102 - this should release the connection

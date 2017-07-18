@@ -36,7 +36,7 @@ public class VMPublishTestCase extends VMTestCase {
     @Override
     public Event process(Event event) throws MuleException {
       try {
-        Thread.sleep(10000);
+        Thread.sleep(300);
       } catch (InterruptedException e) {
 
       }
