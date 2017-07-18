@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+
+    <flow name="publishToTransient">
+        <vm:publish queueName="transientQueue">
+            <vm:content>#[payload]</vm:content>
+        </vm:publish>
+    </flow>
+
+    <flow name="publishToPersistent">
+        <vm:publish queueName="persistentQueue">
+            <vm:content>#[payload]</vm:content>
+        </vm:publish>
+    </flow>
+
+    <flow name="publishToUnexisting">
+        <vm:publish queueName="notThere" />
+    </flow>
+</mule>
