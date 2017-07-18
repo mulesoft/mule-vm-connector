@@ -103,8 +103,8 @@ public class VMOperations implements Startable, Stoppable {
         .map(value -> asConsumeResponse(value, queueDescriptor))
         .orElseThrow(() -> new ModuleException(format(
                                                       "Tried to consume messages from VM queue '%s' but it was empty after timeout of %d %s",
-                                                      queueDescriptor.getQueueName(), queueDescriptor.getQueueTimeout(),
-                                                      queueDescriptor.getQueueTimeoutUnit()),
+                                                      queueDescriptor.getQueueName(), queueDescriptor.getTimeout(),
+                                                      queueDescriptor.getTimeoutUnit()),
                                                EMPTY_QUEUE));
   }
 
@@ -138,8 +138,8 @@ public class VMOperations implements Startable, Stoppable {
           .map(value -> asConsumeResponse(value, queueDescriptor))
           .orElseThrow(() -> new ModuleException(format(
                                                         "Published messages to queue '%s' but got no response after timeout of %d %s",
-                                                        queueDescriptor.getQueueName(), queueDescriptor.getQueueTimeout(),
-                                                        queueDescriptor.getQueueTimeoutUnit()),
+                                                        queueDescriptor.getQueueName(), queueDescriptor.getTimeout(),
+                                                        queueDescriptor.getTimeoutUnit()),
                                                  QUEUE_TIMEOUT));
 
     } catch (ModuleException e) {

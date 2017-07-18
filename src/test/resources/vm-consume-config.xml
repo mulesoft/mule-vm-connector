@@ -11,7 +11,7 @@
     </flow>
 
     <flow name="unexisting">
-        <vm:consume queueName="notThere" queueTimeout="1" />
+        <vm:consume queueName="notThere" timeout="1" />
     </flow>
     
 </mule>

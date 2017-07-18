@@ -12,6 +12,11 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Groups common parameters which describe a Queue
+ *
+ * @since 1.0
+ */
 public class QueueDescriptor {
 
   /**
@@ -26,14 +31,14 @@ public class QueueDescriptor {
    */
   @Parameter
   @Optional(defaultValue = "5")
-  private int queueTimeout = 5;
+  private int timeout = 5;
 
   /**
-   * A {@link TimeUnit} which qualifies the {@link #queueTimeoutUnit}
+   * A {@link TimeUnit} which qualifies the {@link #timeoutUnit}
    */
   @Parameter
   @Optional(defaultValue = "SECONDS")
-  private TimeUnit queueTimeoutUnit = SECONDS;
+  private TimeUnit timeoutUnit = SECONDS;
 
   public QueueDescriptor() {}
 
@@ -45,15 +50,15 @@ public class QueueDescriptor {
     return queueName;
   }
 
-  public int getQueueTimeout() {
-    return queueTimeout;
+  public int getTimeout() {
+    return timeout;
   }
 
-  public TimeUnit getQueueTimeoutUnit() {
-    return queueTimeoutUnit;
+  public TimeUnit getTimeoutUnit() {
+    return timeoutUnit;
   }
 
   public long getQueueTimeoutInMillis() {
-    return queueTimeoutUnit.toMillis(queueTimeout);
+    return timeoutUnit.toMillis(timeout);
   }
 }

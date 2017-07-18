@@ -25,10 +25,6 @@
         <formatterConfigPath>formatter.xml</formatterConfigPath>
     </properties>
 
-    <dependencies>
-
-    </dependencies>
-
     <distributionManagement>
         <downloadUrl>http://www.mulesoft.org/display/MULE/Download</downloadUrl>
         <repository>

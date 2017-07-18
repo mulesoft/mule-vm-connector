@@ -17,7 +17,9 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * 
+ * Returns instances of {@link VMConnection}
+ *
+ * @since 1.0
  */
 public class VMConnectionProvider implements ConnectionProvider<VMConnection> {
 

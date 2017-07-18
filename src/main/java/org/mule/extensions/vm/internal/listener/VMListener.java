@@ -73,8 +73,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
    */
   @Parameter
   @Optional(defaultValue = "4")
-  @Alias("consumers")
-  private int consumersCount;
+  private int numberOfConsumers;
 
   @Connection
   private VMConnection connection;
@@ -120,7 +119,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
       if (queue != null) {
         try {
-          queue.offer(messageBuilder.getBody(), queueDescriptor.getQueueTimeoutInMillis());
+          queue.offer(messageBuilder.getContent(), queueDescriptor.getQueueTimeoutInMillis());
         } catch (Exception e) {
           LOGGER.warn(format("Found exception trying to send response to replyTo queue '%s'", replyTo), e);
         }
@@ -137,8 +136,8 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   private void startConsumers(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) {
     createScheduler();
-    consumers = new ArrayList<>(consumersCount);
-    for (int i = 0; i < consumersCount; i++) {
+    consumers = new ArrayList<>(numberOfConsumers);
+    for (int i = 0; i < numberOfConsumers; i++) {
       final Consumer consumer = new Consumer(sourceCallback, connection);
       consumers.add(consumer);
       scheduler.schedule(consumer::start, 0, MILLISECONDS);
@@ -147,11 +146,11 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   private void createScheduler() {
     scheduler = schedulerService.customScheduler(SchedulerConfig.config()
-        .withMaxConcurrentTasks(consumersCount)
+        .withMaxConcurrentTasks(numberOfConsumers)
         .withName("vm listener on flow " + flowInfo.getName())
         .withPrefix("vm-listener-flow-" + flowInfo.getName())
-        .withShutdownTimeout(queueDescriptor.getQueueTimeout(),
-                             queueDescriptor.getQueueTimeoutUnit()));
+        .withShutdownTimeout(queueDescriptor.getTimeout(),
+                             queueDescriptor.getTimeoutUnit()));
   }
 
   private class Consumer {

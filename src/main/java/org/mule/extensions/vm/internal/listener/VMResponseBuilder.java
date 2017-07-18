@@ -30,9 +30,9 @@ public class VMResponseBuilder {
   @Parameter
   @Content
   @Optional(defaultValue = PAYLOAD)
-  private TypedValue<Serializable> body;
+  private TypedValue<Serializable> content;
 
-  public TypedValue<Serializable> getBody() {
-    return body;
+  public TypedValue<Serializable> getContent() {
+    return content;
   }
 }

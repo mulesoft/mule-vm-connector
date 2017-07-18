@@ -11,6 +11,12 @@ import org.mule.extensions.vm.api.QueueType;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 
+/**
+ * Specialization of {@link QueueDescriptor} which adds additional parameters needed
+ * when used in a {@code vm:listener}
+ *
+ * @since 1.0
+ */
 public class QueueListenerDescriptor extends QueueDescriptor {
 
   /**

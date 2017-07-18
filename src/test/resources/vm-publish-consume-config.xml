@@ -8,9 +8,9 @@
     <flow name="listener">
         <vm:listener queueName="queue" queueType="TRANSIENT">
             <vm:response>
-                <vm:body>
+                <vm:content>
                     #[lower(payload.salute)]
-                </vm:body>
+                </vm:content>
             </vm:response>
         </vm:listener>
         <logger />
