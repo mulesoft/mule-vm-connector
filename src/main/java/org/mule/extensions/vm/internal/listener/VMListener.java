@@ -129,6 +129,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
     });
   }
 
+  // TODO: MULE-13102 - this should release the connection
   @OnTerminate
   public void onTerminate() {
     // no - op

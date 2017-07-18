@@ -58,6 +58,7 @@ public class VMConnection implements XATransactionalConnection {
     queueSession = null;
   }
 
+  //TODO: MULE-13102 - this should go away and the session be part of the connection state
   private QueueSession getQueueSession() {
     synchronized (queueSession) {
       QueueSession session = queueSession.get();
