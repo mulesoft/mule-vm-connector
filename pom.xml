@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.mule.tests.plugin</groupId>
             <artifactId>mule-tests-component-plugin</artifactId>
-            <version>4.0.0-SNAPSHOT</version>
+            <version>${mule.version}</version>
             <classifier>mule-plugin</classifier>
             <scope>test</scope>
         </dependency>
