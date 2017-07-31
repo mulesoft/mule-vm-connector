@@ -6,12 +6,16 @@
  */
 package org.mule.extensions.vm.internal.connection;
 
+import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
+import org.mule.runtime.api.tx.TransactionException;
 import org.mule.runtime.core.api.util.queue.Queue;
-import org.mule.runtime.core.api.util.queue.QueueManager;
 import org.mule.runtime.core.api.util.queue.QueueSession;
 import org.mule.runtime.extension.api.connectivity.XATransactionalConnection;
 
 import javax.transaction.xa.XAResource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link XATransactionalConnection} which hides the details of Mule's queueing API.
@@ -20,54 +24,64 @@ import javax.transaction.xa.XAResource;
  */
 public class VMConnection implements XATransactionalConnection {
 
-  private final QueueManager queueManager;
-  private ThreadLocal<QueueSession> queueSession;
+  private static final Logger LOGGER = LoggerFactory.getLogger(VMConnection.class);
 
+  private final QueueSession queueSession;
+  private boolean txBegun = false;
 
-  public VMConnection(QueueManager queueManager) {
-    this.queueManager = queueManager;
-    queueSession = new ThreadLocal<>();
+  public VMConnection(QueueSession queueSession) {
+    this.queueSession = queueSession;
   }
 
   public Queue getQueue(String queueName) {
-    return getQueueSession().getQueue(queueName);
+    return queueSession.getQueue(queueName);
   }
 
   @Override
-  public void begin() throws Exception {
-    getQueueSession().begin();
+  public void begin() throws TransactionException {
+    try {
+      queueSession.begin();
+      txBegun = true;
+    } catch (Exception e) {
+      throw new TransactionException(createStaticMessage("Could not start transaction: " + e.getMessage()), e);
+    }
   }
 
   @Override
-  public void commit() throws Exception {
-    getQueueSession().commit();
+  public void commit() throws TransactionException {
+    try {
+      queueSession.commit();
+      txBegun = false;
+    } catch (Exception e) {
+      throw new TransactionException(createStaticMessage("Could not commit transaction: " + e.getMessage()), e);
+    }
   }
 
   @Override
-  public void rollback() throws Exception {
-    getQueueSession().rollback();
+  public void rollback() throws TransactionException {
+    try {
+      queueSession.rollback();
+      txBegun = false;
+    } catch (Exception e) {
+      throw new TransactionException(createStaticMessage("Could not rollback transaction: " + e.getMessage()), e);
+    }
   }
 
   @Override
   public XAResource getXAResource() {
-    return getQueueSession();
+    return queueSession;
   }
 
   @Override
   public void close() {
-    queueSession = null;
-  }
-
-  //TODO: MULE-13102 - this should go away and the session be part of the connection state
-  private QueueSession getQueueSession() {
-    synchronized (queueSession) {
-      QueueSession session = queueSession.get();
-      if (session == null) {
-        session = queueManager.getQueueSession();
-        queueSession.set(session);
+    if (txBegun) {
+      try {
+        rollback();
+      } catch (Exception e) {
+        if (LOGGER.isWarnEnabled()) {
+          LOGGER.warn("Found exception while rolling back transaction due to connection close: " + e.getMessage(), e);
+        }
       }
-
-      return session;
     }
   }
 }

@@ -42,7 +42,7 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected static final String JSON_PAYLOAD = "{\"salute\": \"" + STRING_PAYLOAD + "\"}";
   protected static final String TRANSIENT_QUEUE_NAME = "transientQueue";
   protected static final String PERSISTENT_QUEUE_NAME = "persistentQueue";
-  protected static final java.util.Queue<Event> captured = new ConcurrentLinkedDeque<>();
+  protected static final java.util.Queue<Event> CAPTURED = new ConcurrentLinkedDeque<>();
   protected static final String VM_ERROR_NAMESPACE = "VM";
   protected static final long TIMEOUT = 5000;
 
@@ -50,9 +50,9 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
 
     @Override
     public Event process(Event event) throws MuleException {
-      captured.add(event);
-      synchronized (captured) {
-        captured.notifyAll();
+      CAPTURED.add(event);
+      synchronized (CAPTURED) {
+        CAPTURED.notifyAll();
       }
 
       return event;
@@ -70,7 +70,7 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
 
   @Override
   protected void doTearDown() throws Exception {
-    captured.clear();
+    CAPTURED.clear();
   }
 
   protected Queue getTransientQueue() {
@@ -84,7 +84,7 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected Event getCapturedEvent() {
     AtomicReference<Event> value = new AtomicReference<>();
     new PollingProber(TIMEOUT, 100).check(new JUnitLambdaProbe(() -> {
-      Event capturedEvent = captured.poll();
+      Event capturedEvent = CAPTURED.poll();
       if (capturedEvent != null) {
         value.set(capturedEvent);
         return true;

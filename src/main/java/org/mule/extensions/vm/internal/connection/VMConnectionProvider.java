@@ -29,7 +29,7 @@ public class VMConnectionProvider implements ConnectionProvider<VMConnection> {
 
   @Override
   public VMConnection connect() throws ConnectionException {
-    return new VMConnection(queueManager);
+    return new VMConnection(queueManager.getQueueSession());
   }
 
   @Override
