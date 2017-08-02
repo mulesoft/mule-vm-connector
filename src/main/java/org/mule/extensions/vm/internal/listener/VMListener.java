@@ -15,9 +15,13 @@ import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.extensions.vm.internal.connection.VMConnection;
+import org.mule.runtime.api.component.location.ComponentLocation;
+import org.mule.runtime.api.connection.ConnectionException;
+import org.mule.runtime.api.connection.ConnectionProvider;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
+import org.mule.runtime.api.tx.TransactionException;
 import org.mule.runtime.core.api.scheduler.SchedulerConfig;
 import org.mule.runtime.core.api.scheduler.SchedulerService;
 import org.mule.runtime.core.api.util.queue.Queue;
@@ -29,7 +33,6 @@ import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
 import org.mule.runtime.extension.api.annotation.source.EmitsResponse;
-import org.mule.runtime.extension.api.runtime.FlowInfo;
 import org.mule.runtime.extension.api.runtime.operation.Result;
 import org.mule.runtime.extension.api.runtime.source.Source;
 import org.mule.runtime.extension.api.runtime.source.SourceCallback;
@@ -46,10 +49,10 @@ import org.slf4j.Logger;
 
 /**
  * A source which creates and listens on a VM queues.
- *
+ * <p>
  * VM queues are created by placing listeners on them, which is why this listener contains parameters on the queue's
  * behaviour, such as it being persistent or not, the max capacity, etc.
- *
+ * <p>
  * The VM connector can only be used to publish and consume messages from queues for which a listener has been defined.
  *
  * @since 1.0
@@ -69,14 +72,14 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   /**
    * The amount of concurrent consumers to be placed on the queue. As the number of consumers increases,
-   * so does the speed on which this source pushes messages into the owning flow. 
+   * so does the speed on which this source pushes messages into the owning flow.
    */
   @Parameter
   @Optional(defaultValue = "4")
   private int numberOfConsumers;
 
   @Connection
-  private VMConnection connection;
+  private ConnectionProvider<VMConnection> connectionProvider;
 
   @Inject
   private SchedulerService schedulerService;
@@ -85,11 +88,11 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   private Scheduler scheduler;
 
-  private FlowInfo flowInfo;
+  private ComponentLocation location;
 
   @Override
   public void onStart(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) throws MuleException {
-    connectorQueueManager.createQueue(queueDescriptor, flowInfo.getName());
+    connectorQueueManager.createQueue(queueDescriptor, location.getRootContainerName());
     startConsumers(sourceCallback);
   }
 
@@ -109,6 +112,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
                         SourceCallbackContext ctx) {
 
     ctx.<String>getVariable(REPLY_TO_QUEUE_NAME).ifPresent(replyTo -> {
+      VMConnection connection = ctx.getConnection();
       Queue queue;
       try {
         queue = connection.getQueue(replyTo);
@@ -129,7 +133,6 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
     });
   }
 
-  // TODO: MULE-13102 - this should release the connection
   @OnTerminate
   public void onTerminate() {
     // no - op
@@ -139,7 +142,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
     createScheduler();
     consumers = new ArrayList<>(numberOfConsumers);
     for (int i = 0; i < numberOfConsumers; i++) {
-      final Consumer consumer = new Consumer(sourceCallback, connection);
+      final Consumer consumer = new Consumer(sourceCallback);
       consumers.add(consumer);
       scheduler.schedule(consumer::start, 0, MILLISECONDS);
     }
@@ -148,8 +151,8 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   private void createScheduler() {
     scheduler = schedulerService.customScheduler(SchedulerConfig.config()
         .withMaxConcurrentTasks(numberOfConsumers)
-        .withName("vm listener on flow " + flowInfo.getName())
-        .withPrefix("vm-listener-flow-" + flowInfo.getName())
+        .withName("vm listener on flow " + location.getRootContainerName())
+        .withPrefix("vm-listener-flow-" + location.getRootContainerName())
         .withShutdownTimeout(queueDescriptor.getTimeout(),
                              queueDescriptor.getTimeoutUnit()));
   }
@@ -157,62 +160,83 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   private class Consumer {
 
     private final SourceCallback<Serializable, VMMessageAttributes> sourceCallback;
-    private final VMConnection connection;
     private final AtomicBoolean stop = new AtomicBoolean(false);
 
-    public Consumer(SourceCallback<Serializable, VMMessageAttributes> sourceCallback, VMConnection connection) {
+    public Consumer(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) {
       this.sourceCallback = sourceCallback;
-      this.connection = connection;
     }
 
     public void start() {
-      final Queue queue = connection.getQueue(queueDescriptor.getQueueName());
       final long timeout = queueDescriptor.getQueueTimeoutInMillis();
 
       while (isAlive()) {
+        SourceCallbackContext ctx = sourceCallback.createContext();
         Serializable value;
         try {
+          final VMConnection connection = connect(ctx);
+          final Queue queue = connection.getQueue(queueDescriptor.getQueueName());
           value = queue.poll(timeout);
-          if (value != null) {
-            Result.Builder resultBuilder = Result.<Serializable, VMMessageAttributes>builder()
-                .attributes(new VMMessageAttributes(queueDescriptor.getQueueName()));
 
-            SourceCallbackContext ctx = sourceCallback.createContext();
+          if (value == null) {
+            cancel(ctx.getConnection());
+            continue;
+          }
 
-            if (value instanceof ReplyToCommand) {
-              ReplyToCommand replyTo = (ReplyToCommand) value;
-              ctx.addVariable(REPLY_TO_QUEUE_NAME, replyTo.getReplyToQueueName());
+          Result.Builder resultBuilder = Result.<Serializable, VMMessageAttributes>builder()
+              .attributes(new VMMessageAttributes(queueDescriptor.getQueueName()));
 
-              value = replyTo.getValue();
-            }
+          if (value instanceof ReplyToCommand) {
+            ReplyToCommand replyTo = (ReplyToCommand) value;
+            ctx.addVariable(REPLY_TO_QUEUE_NAME, replyTo.getReplyToQueueName());
 
-            if (value instanceof TypedValue) {
-              TypedValue typedValue = (TypedValue) value;
-              resultBuilder.output(typedValue.getValue())
-                  .mediaType(typedValue.getDataType().getMediaType());
-            } else {
-              resultBuilder.output(value);
-            }
+            value = replyTo.getValue();
+          }
 
-            Result<Serializable, VMMessageAttributes> result = resultBuilder.build();
+          if (value instanceof TypedValue) {
+            TypedValue typedValue = (TypedValue) value;
+            resultBuilder.output(typedValue.getValue())
+                .mediaType(typedValue.getDataType().getMediaType());
+          } else {
+            resultBuilder.output(value);
+          }
 
-            if (isAlive()) {
-              sourceCallback.handle(result, ctx);
-            }
+          Result<Serializable, VMMessageAttributes> result = resultBuilder.build();
+
+          if (isAlive()) {
+            sourceCallback.handle(result, ctx);
+          } else {
+            connectionProvider.disconnect(ctx.getConnection());
           }
         } catch (InterruptedException e) {
           stop();
           LOGGER.info("Consumer for vm:listener on flow '{}' was interrupted. No more consuming for thread '{}'",
-                      flowInfo.getName(),
+                      location.getRootContainerName(),
                       currentThread().getName());
         } catch (Exception e) {
           if (LOGGER.isErrorEnabled()) {
             LOGGER.error(format("Consumer for vm:listener on flow '%s' found unexpected exception. Consuming will continue '",
-                                flowInfo.getName()),
+                                location.getRootContainerName()),
                          e);
           }
         }
       }
+    }
+
+    private void cancel(VMConnection connection) {
+      try {
+        connection.rollback();
+      } catch (TransactionException e) {
+        if (LOGGER.isWarnEnabled()) {
+          LOGGER.warn("Failed to rollback transaction: " + e.getMessage(), e);
+        }
+      }
+      connectionProvider.disconnect(connection);
+    }
+
+    private VMConnection connect(SourceCallbackContext ctx) throws ConnectionException, TransactionException {
+      VMConnection connection = connectionProvider.connect();
+      ctx.bindConnection(connection);
+      return connection;
     }
 
     private boolean isAlive() {

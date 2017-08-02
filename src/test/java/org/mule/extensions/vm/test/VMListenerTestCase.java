@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright (c) MuleSoft, Inc.  All rights reserved.  http://www.mulesoft.com
  * The software in this package is published under the terms of the CPAL v1.0
  * license, a copy of which has been included with this distribution in the
@@ -97,7 +98,7 @@ public class VMListenerTestCase extends VMTestCase {
     flow.stop();
 
     Queue queue = getTransientQueue();
-    AtomicInteger capturedPayloadsCount = new AtomicInteger(captured.size());
+    AtomicInteger capturedPayloadsCount = new AtomicInteger(CAPTURED.size());
 
     new PollingProber(SECONDS.toMillis(10), 100).check(new JUnitProbe() {
 
@@ -106,11 +107,11 @@ public class VMListenerTestCase extends VMTestCase {
         Serializable sentValue = new Apple();
         queue.offer(sentValue, TIMEOUT);
 
-        synchronized (captured) {
-          captured.wait(TIMEOUT);
+        synchronized (CAPTURED) {
+          CAPTURED.wait(TIMEOUT);
         }
 
-        int updatedSize = captured.size();
+        int updatedSize = CAPTURED.size();
         if (updatedSize == capturedPayloadsCount.get()) {
           return true;
         } else {
