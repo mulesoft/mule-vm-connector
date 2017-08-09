@@ -17,7 +17,7 @@ import static org.junit.Assert.assertThat;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.core.api.Event;
+import org.mule.runtime.core.api.InternalEvent;
 import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.tck.probe.JUnitProbe;
@@ -45,7 +45,7 @@ public class VMListenerTestCase extends VMTestCase {
     LocalDateTime now = now();
     queue.offer(sentValue, TIMEOUT);
 
-    Event event = getCapturedEvent();
+    InternalEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 
@@ -63,7 +63,7 @@ public class VMListenerTestCase extends VMTestCase {
     LocalDateTime now = now();
     queue.offer(apple, TIMEOUT);
 
-    Event event = getCapturedEvent();
+    InternalEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 
@@ -83,7 +83,7 @@ public class VMListenerTestCase extends VMTestCase {
     LocalDateTime now = now();
     queue.offer(value, TIMEOUT);
 
-    Event event = getCapturedEvent();
+    InternalEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 
