@@ -23,7 +23,7 @@
 
     <properties>
         <formatterConfigPath>formatter.xml</formatterConfigPath>
-        <muleTestsComponentPlugin>4.0.0-SNAPSHOT</muleTestsComponentPlugin>
+        <muleTestsComponentPlugin>4.0.0-rc.cyborg-SNAPSHOT</muleTestsComponentPlugin>
     </properties>
 
     <distributionManagement>
