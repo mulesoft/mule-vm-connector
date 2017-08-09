@@ -23,6 +23,7 @@
 
     <properties>
         <formatterConfigPath>formatter.xml</formatterConfigPath>
+        <muleTestsComponentPlugin>4.0.0-SNAPSHOT</muleTestsComponentPlugin>
     </properties>
 
     <distributionManagement>
@@ -44,7 +45,7 @@
         <dependency>
             <groupId>org.mule.tests.plugin</groupId>
             <artifactId>mule-tests-component-plugin</artifactId>
-            <version>4.0.0-SNAPSHOT</version>
+            <version>${muleTestsComponentPlugin}</version>
             <classifier>mule-plugin</classifier>
             <scope>test</scope>
         </dependency>
