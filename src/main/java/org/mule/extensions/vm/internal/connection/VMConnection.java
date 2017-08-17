@@ -49,6 +49,10 @@ public class VMConnection implements XATransactionalConnection {
 
   @Override
   public void commit() throws TransactionException {
+    if (!txBegun) {
+      return;
+    }
+
     try {
       queueSession.commit();
       txBegun = false;
@@ -59,6 +63,10 @@ public class VMConnection implements XATransactionalConnection {
 
   @Override
   public void rollback() throws TransactionException {
+    if (!txBegun) {
+      return;
+    }
+
     try {
       queueSession.rollback();
       txBegun = false;
