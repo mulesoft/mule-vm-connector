@@ -30,5 +30,10 @@ updateParentVersion() {
 }
 
 VERSION_TO_DEPS=$1
+MULE_VERSION=$2
+
+propertiesDeps=("muleTestsComponentPlugin")
+
+updatePropertiesVersion "$MULE_VERSION" pom.xml propertiesDeps[@]
 
 updateParentVersion "$VERSION_TO_DEPS" pom.xml
