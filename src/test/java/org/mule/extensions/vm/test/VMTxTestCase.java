@@ -19,6 +19,7 @@ import org.mule.runtime.core.api.construct.Flow;
 import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class VMTxTestCase extends VMTestCase {
@@ -69,6 +70,7 @@ public class VMTxTestCase extends VMTestCase {
     assertThat(getTransientQueue().poll(100), is(nullValue()));
   }
 
+  @Ignore("MULE-13404")
   @Test
   public void listenerRollback() throws Exception {
     final String flowName = "failingListener";
