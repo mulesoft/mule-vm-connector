@@ -13,7 +13,7 @@
     <groupId>org.mule.connectors</groupId>
     <artifactId>mule-vm-connector</artifactId>
     <packaging>mule-extension</packaging>
-    <version>0.9.0-rc.darkseid-SNAPSHOT</version>
+    <version>0.9.0-rc.darkseid</version>
 
     <name>VM Connector</name>
     <description>
