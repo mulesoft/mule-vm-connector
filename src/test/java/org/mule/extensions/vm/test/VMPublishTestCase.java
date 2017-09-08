@@ -17,7 +17,7 @@ import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.streaming.CursorProvider;
-import org.mule.runtime.core.api.InternalEvent;
+import org.mule.runtime.core.api.event.BaseEvent;
 import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.streaming.bytes.CursorStreamProviderFactory;
 import org.mule.runtime.core.api.streaming.bytes.InMemoryCursorStreamConfig;
@@ -34,7 +34,7 @@ public class VMPublishTestCase extends VMTestCase {
   public static class DelayProcessor implements Processor {
 
     @Override
-    public InternalEvent process(InternalEvent event) throws MuleException {
+    public BaseEvent process(BaseEvent event) throws MuleException {
       try {
         Thread.sleep(300);
       } catch (InterruptedException e) {
@@ -92,7 +92,7 @@ public class VMPublishTestCase extends VMTestCase {
         .withMediaType(value.getDataType().getMediaType())
         .run();
 
-    InternalEvent event = getCapturedEvent();
+    BaseEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue<byte[]> payload = message.getPayload();
 
@@ -109,7 +109,7 @@ public class VMPublishTestCase extends VMTestCase {
         .withMediaType(value.getDataType().getMediaType())
         .run();
 
-    InternalEvent event = getCapturedEvent();
+    BaseEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 

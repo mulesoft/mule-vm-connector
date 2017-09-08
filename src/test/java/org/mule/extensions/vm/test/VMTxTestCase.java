@@ -14,8 +14,8 @@ import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.runtime.api.lifecycle.InitialisationException;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.core.api.InternalEvent;
 import org.mule.runtime.core.api.construct.Flow;
+import org.mule.runtime.core.api.event.BaseEvent;
 import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
 
@@ -90,7 +90,7 @@ public class VMTxTestCase extends VMTestCase {
     assertThat(value, equalTo(STRING_PAYLOAD));
   }
 
-  private InternalEvent publish(boolean fail) throws Exception {
+  private BaseEvent publish(boolean fail) throws Exception {
     try {
       return flowRunner("publishInTx")
           .withPayload(STRING_PAYLOAD)
