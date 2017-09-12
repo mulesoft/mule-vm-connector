@@ -205,7 +205,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
           if (isAlive()) {
             sourceCallback.handle(result, ctx);
           } else {
-            connectionProvider.disconnect(ctx.getConnection());
+            cancel(ctx.getConnection());
           }
         } catch (InterruptedException e) {
           stop();
