@@ -13,6 +13,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mule.runtime.core.api.config.MuleProperties.OBJECT_QUEUE_MANAGER;
+
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.functional.junit4.MuleArtifactFunctionalTestCase;
@@ -35,6 +36,9 @@ import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 @ArtifactClassLoaderRunnerConfig(exportPluginClasses = VMConnectorQueueManager.class)
 public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
 
@@ -45,6 +49,11 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected static final java.util.Queue<BaseEvent> CAPTURED = new ConcurrentLinkedDeque<>();
   protected static final String VM_ERROR_NAMESPACE = "VM";
   protected static final long TIMEOUT = 5000;
+
+  @Override
+  protected boolean doTestClassInjection() {
+    return true;
+  }
 
   public static class EventCaptor implements Processor {
 
@@ -59,14 +68,15 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
     }
   }
 
-  protected QueueManager queueManager;
-  protected StreamingManager streamingManager;
+  @Inject
+  protected VMConnectorQueueManager vmQueueManager;
 
-  @Override
-  protected void doSetUp() throws Exception {
-    queueManager = muleContext.getRegistry().lookupObject(OBJECT_QUEUE_MANAGER);
-    streamingManager = muleContext.getRegistry().lookupObject(StreamingManager.class);
-  }
+  @Inject
+  @Named(OBJECT_QUEUE_MANAGER)
+  protected QueueManager queueManager;
+
+  @Inject
+  protected StreamingManager streamingManager;
 
   @Override
   protected void doTearDown() throws Exception {

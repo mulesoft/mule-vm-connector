@@ -15,22 +15,29 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
+
+import org.mule.runtime.api.artifact.Registry;
+import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.event.BaseEvent;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
 import org.mule.tck.testmodels.fruit.Apple;
 
+import org.junit.Test;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Test;
+import javax.inject.Inject;
 
 public class VMListenerTestCase extends VMTestCase {
+
+  @Inject
+  private Registry registry;
 
   @Override
   protected String getConfigFile() {
@@ -94,8 +101,7 @@ public class VMListenerTestCase extends VMTestCase {
 
   @Test
   public void consumersStopped() throws Exception {
-    Flow flow = (Flow) muleContext.getRegistry().lookupFlowConstruct("transientListener");
-    flow.stop();
+    registry.<Stoppable>lookupByName("transientListener").get().stop();
 
     Queue queue = getTransientQueue();
     AtomicInteger capturedPayloadsCount = new AtomicInteger(CAPTURED.size());
