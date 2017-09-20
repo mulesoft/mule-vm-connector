@@ -16,7 +16,6 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 
-import org.mule.runtime.api.artifact.Registry;
 import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
@@ -32,12 +31,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.inject.Inject;
-
 public class VMListenerTestCase extends VMTestCase {
-
-  @Inject
-  private Registry registry;
 
   @Override
   protected String getConfigFile() {

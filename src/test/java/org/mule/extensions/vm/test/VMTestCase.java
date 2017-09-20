@@ -50,11 +50,6 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected static final String VM_ERROR_NAMESPACE = "VM";
   protected static final long TIMEOUT = 5000;
 
-  @Override
-  protected boolean doTestClassInjection() {
-    return true;
-  }
-
   public static class EventCaptor implements Processor {
 
     @Override
