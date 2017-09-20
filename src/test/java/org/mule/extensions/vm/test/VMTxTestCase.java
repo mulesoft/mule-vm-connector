@@ -10,6 +10,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+
 import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.runtime.api.lifecycle.InitialisationException;
@@ -21,19 +22,16 @@ import org.mule.tck.probe.PollingProber;
 
 import org.junit.Test;
 
+import javax.inject.Inject;
+
 public class VMTxTestCase extends VMTestCase {
 
-  private VMConnectorQueueManager queueManager;
+  @Inject
+  private VMConnectorQueueManager vmQueueManager;
 
   @Override
   protected String getConfigFile() {
     return "vm-tx-config.xml";
-  }
-
-  @Override
-  protected void doSetUp() throws Exception {
-    super.doSetUp();
-    queueManager = muleContext.getRegistry().lookupObject(VMConnectorQueueManager.class);
   }
 
   @Test
@@ -111,6 +109,6 @@ public class VMTxTestCase extends VMTestCase {
   }
 
   private void simulateListener() throws InitialisationException {
-    queueManager.createQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "listener");
+    vmQueueManager.createQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "listener");
   }
 }

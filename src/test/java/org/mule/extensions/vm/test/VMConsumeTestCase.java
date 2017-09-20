@@ -14,15 +14,15 @@ import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.DataType.STRING;
 import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
+
 import org.mule.extensions.vm.internal.QueueListenerDescriptor;
-import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.BaseEvent;
 import org.mule.runtime.core.api.exception.MessagingException;
 
-import java.io.Serializable;
-
 import org.junit.Test;
+
+import java.io.Serializable;
 
 public class VMConsumeTestCase extends VMTestCase {
 
@@ -34,8 +34,7 @@ public class VMConsumeTestCase extends VMTestCase {
   @Override
   protected void doSetUp() throws Exception {
     super.doSetUp();
-    VMConnectorQueueManager queueManager = muleContext.getRegistry().lookupObject(VMConnectorQueueManager.class);
-    queueManager.createQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "consume");
+    vmQueueManager.createQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "consume");
   }
 
   @Test
