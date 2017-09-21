@@ -98,13 +98,13 @@ public class VMTxTestCase extends VMTestCase {
   }
 
   private void startListenerFlow(String flowName) throws Exception {
-    Flow flow = lookupFlowConstruct(flowName);
+    Flow flow = (Flow) getFlowConstruct(flowName);
     flow.start();
   }
 
 
   private void stopListenerFlow(String flowName) throws Exception {
-    Flow flow = lookupFlowConstruct(flowName);
+    Flow flow = (Flow) getFlowConstruct(flowName);
     flow.stop();
   }
 
