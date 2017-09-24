@@ -20,7 +20,7 @@ import org.mule.functional.junit4.MuleArtifactFunctionalTestCase;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.core.api.event.BaseEvent;
+import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.exception.MessagingException;
 import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.streaming.StreamingManager;
@@ -46,14 +46,14 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected static final String JSON_PAYLOAD = "{\"salute\": \"" + STRING_PAYLOAD + "\"}";
   protected static final String TRANSIENT_QUEUE_NAME = "transientQueue";
   protected static final String PERSISTENT_QUEUE_NAME = "persistentQueue";
-  protected static final java.util.Queue<BaseEvent> CAPTURED = new ConcurrentLinkedDeque<>();
+  protected static final java.util.Queue<CoreEvent> CAPTURED = new ConcurrentLinkedDeque<>();
   protected static final String VM_ERROR_NAMESPACE = "VM";
   protected static final long TIMEOUT = 5000;
 
   public static class EventCaptor implements Processor {
 
     @Override
-    public BaseEvent process(BaseEvent event) throws MuleException {
+    public CoreEvent process(CoreEvent event) throws MuleException {
       CAPTURED.add(event);
       synchronized (CAPTURED) {
         CAPTURED.notifyAll();
@@ -86,10 +86,10 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
     return getQueue(PERSISTENT_QUEUE_NAME);
   }
 
-  protected BaseEvent getCapturedEvent() {
-    AtomicReference<BaseEvent> value = new AtomicReference<>();
+  protected CoreEvent getCapturedEvent() {
+    AtomicReference<CoreEvent> value = new AtomicReference<>();
     new PollingProber(TIMEOUT, 100).check(new JUnitLambdaProbe(() -> {
-      BaseEvent capturedEvent = CAPTURED.poll();
+      CoreEvent capturedEvent = CAPTURED.poll();
       if (capturedEvent != null) {
         value.set(capturedEvent);
         return true;
