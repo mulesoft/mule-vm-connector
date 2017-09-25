@@ -17,7 +17,7 @@ import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
 
 import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.core.api.event.BaseEvent;
+import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.exception.MessagingException;
 
 import org.junit.Test;
@@ -80,7 +80,7 @@ public class VMConsumeTestCase extends VMTestCase {
     getTransientQueue().offer(value, 1000);
   }
 
-  private BaseEvent consume() throws Exception {
+  private CoreEvent consume() throws Exception {
     flowRunner("consume").run();
     return getCapturedEvent();
   }

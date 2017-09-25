@@ -19,7 +19,7 @@ import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.core.api.event.BaseEvent;
+import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
@@ -46,7 +46,7 @@ public class VMListenerTestCase extends VMTestCase {
     LocalDateTime now = now();
     queue.offer(sentValue, TIMEOUT);
 
-    BaseEvent event = getCapturedEvent();
+    CoreEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 
@@ -64,7 +64,7 @@ public class VMListenerTestCase extends VMTestCase {
     LocalDateTime now = now();
     queue.offer(apple, TIMEOUT);
 
-    BaseEvent event = getCapturedEvent();
+    CoreEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 
@@ -84,7 +84,7 @@ public class VMListenerTestCase extends VMTestCase {
     LocalDateTime now = now();
     queue.offer(value, TIMEOUT);
 
-    BaseEvent event = getCapturedEvent();
+    CoreEvent event = getCapturedEvent();
     Message message = event.getMessage();
     TypedValue payload = message.getPayload();
 
