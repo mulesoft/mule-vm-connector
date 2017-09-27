@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.mule.extensions</groupId>
         <artifactId>mule-core-modules-parent</artifactId>
-        <version>1.0.0-rc-SNAPSHOT</version>
+        <version>1.0.0-rc</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -23,7 +23,7 @@
 
     <properties>
         <formatterConfigPath>formatter.xml</formatterConfigPath>
-        <muleTestsComponentPlugin>4.0.0-rc-SNAPSHOT</muleTestsComponentPlugin>
+        <muleTestsComponentPlugin>4.0.0-rc</muleTestsComponentPlugin>
     </properties>
 
     <distributionManagement>
