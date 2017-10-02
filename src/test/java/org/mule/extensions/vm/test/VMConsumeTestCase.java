@@ -47,12 +47,7 @@ public class VMConsumeTestCase extends VMTestCase {
   @Test
   public void consumeUnexistingQueue() throws Exception {
     expectedError.expectErrorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name());
-    // try {
     flowRunner("unexisting").run();
-    // fail("Was expecting failure");
-    // } catch (MessagingException e) {
-    // assertThat(e.getEvent().getError().get().getErrorType(), is(errorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name())));
-    // }
   }
 
   @Test
@@ -67,12 +62,7 @@ public class VMConsumeTestCase extends VMTestCase {
   @Test
   public void emptyQueue() throws Exception {
     expectedError.expectErrorType(VM_ERROR_NAMESPACE, EMPTY_QUEUE.name());
-    // try {
     flowRunner("consume").run();
-    // fail("Was expecting failure");
-    // } catch (MessagingException e) {
-    // assertThat(e.getEvent().getError().get().getErrorType(), is(errorType(VM_ERROR_NAMESPACE, EMPTY_QUEUE.name())));
-    // }
   }
 
   private void offer(Serializable value) throws Exception {
