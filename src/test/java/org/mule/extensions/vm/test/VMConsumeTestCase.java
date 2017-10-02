@@ -8,17 +8,14 @@ package org.mule.extensions.vm.test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
 import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.DataType.STRING;
-import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
 
 import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
-import org.mule.runtime.core.api.exception.MessagingException;
 
 import org.junit.Test;
 
@@ -49,12 +46,8 @@ public class VMConsumeTestCase extends VMTestCase {
 
   @Test
   public void consumeUnexistingQueue() throws Exception {
-    try {
-      flowRunner("unexisting").run();
-      fail("Was expecting failure");
-    } catch (MessagingException e) {
-      assertThat(e.getEvent().getError().get().getErrorType(), is(errorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name())));
-    }
+    expectedError.expectErrorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name());
+    flowRunner("unexisting").run();
   }
 
   @Test
@@ -68,12 +61,8 @@ public class VMConsumeTestCase extends VMTestCase {
 
   @Test
   public void emptyQueue() throws Exception {
-    try {
-      flowRunner("consume").run();
-      fail("Was expecting failure");
-    } catch (MessagingException e) {
-      assertThat(e.getEvent().getError().get().getErrorType(), is(errorType(VM_ERROR_NAMESPACE, EMPTY_QUEUE.name())));
-    }
+    expectedError.expectErrorType(VM_ERROR_NAMESPACE, EMPTY_QUEUE.name());
+    flowRunner("consume").run();
   }
 
   private void offer(Serializable value) throws Exception {

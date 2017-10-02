@@ -11,17 +11,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 import static org.mule.runtime.core.api.config.MuleProperties.OBJECT_QUEUE_MANAGER;
 
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
+import org.mule.functional.api.exception.ExpectedError;
 import org.mule.functional.junit4.MuleArtifactFunctionalTestCase;
 import org.mule.runtime.api.exception.MuleException;
-import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
-import org.mule.runtime.core.api.exception.MessagingException;
 import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.streaming.StreamingManager;
 import org.mule.runtime.core.api.util.queue.Queue;
@@ -31,6 +29,8 @@ import org.mule.tck.junit4.matcher.ErrorTypeMatcher;
 import org.mule.tck.probe.JUnitLambdaProbe;
 import org.mule.tck.probe.PollingProber;
 import org.mule.test.runner.ArtifactClassLoaderRunnerConfig;
+
+import org.junit.Rule;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -62,6 +62,9 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
       return event;
     }
   }
+
+  @Rule
+  public ExpectedError expectedError = ExpectedError.none();
 
   @Inject
   protected VMConnectorQueueManager vmQueueManager;
@@ -118,12 +121,7 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   }
 
   protected void runAndExpect(String flowName, ErrorTypeMatcher matcher) throws Exception {
-    try {
-      flowRunner(flowName).withPayload("Hello").run();
-      fail("Was expecting a failure");
-    } catch (MessagingException e) {
-      Error error = e.getEvent().getError().get();
-      assertThat(error.getErrorType(), is(matcher));
-    }
+    expectedError.expectErrorType(matcher);
+    flowRunner(flowName).withPayload("Hello").run();
   }
 }
