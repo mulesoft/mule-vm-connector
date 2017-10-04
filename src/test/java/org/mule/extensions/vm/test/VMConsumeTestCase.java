@@ -41,7 +41,7 @@ public class VMConsumeTestCase extends VMTestCase {
 
     TypedValue<String> payload = consume().getMessage().getPayload();
     assertThat(payload.getValue(), is(value.getValue()));
-    assertThat(payload.getDataType(), is(JSON_STRING));
+    assertThat(JSON_STRING.isCompatibleWith(payload.getDataType()), is(true));
   }
 
   @Test
@@ -56,7 +56,7 @@ public class VMConsumeTestCase extends VMTestCase {
 
     TypedValue<String> payload = consume().getMessage().getPayload();
     assertThat(payload.getValue(), is(STRING_PAYLOAD));
-    assertThat(payload.getDataType(), is(STRING));
+    assertThat(STRING.isCompatibleWith(payload.getDataType()), is(true));
   }
 
   @Test
