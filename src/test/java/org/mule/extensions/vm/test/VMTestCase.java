@@ -12,7 +12,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.mule.runtime.core.api.config.MuleProperties.OBJECT_QUEUE_MANAGER;
-
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.functional.api.exception.ExpectedError;
@@ -30,14 +29,14 @@ import org.mule.tck.probe.JUnitLambdaProbe;
 import org.mule.tck.probe.PollingProber;
 import org.mule.test.runner.ArtifactClassLoaderRunnerConfig;
 
-import org.junit.Rule;
-
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import org.junit.Rule;
 
 @ArtifactClassLoaderRunnerConfig(exportPluginClasses = VMConnectorQueueManager.class)
 public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
@@ -57,6 +56,20 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
       CAPTURED.add(event);
       synchronized (CAPTURED) {
         CAPTURED.notifyAll();
+      }
+
+      return event;
+    }
+  }
+
+  public static class Sleep implements Processor {
+
+    @Override
+    public CoreEvent process(CoreEvent event) throws MuleException {
+      try {
+        Thread.sleep(1000);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
 
       return event;
@@ -90,8 +103,12 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   }
 
   protected CoreEvent getCapturedEvent() {
+    return getCapturedEvent(TIMEOUT);
+  }
+
+  protected CoreEvent getCapturedEvent(long timeout) {
     AtomicReference<CoreEvent> value = new AtomicReference<>();
-    new PollingProber(TIMEOUT, 100).check(new JUnitLambdaProbe(() -> {
+    new PollingProber(timeout, 100).check(new JUnitLambdaProbe(() -> {
       CoreEvent capturedEvent = CAPTURED.poll();
       if (capturedEvent != null) {
         value.set(capturedEvent);

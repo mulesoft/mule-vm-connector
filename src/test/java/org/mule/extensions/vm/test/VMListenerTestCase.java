@@ -13,9 +13,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
-
 import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
@@ -25,11 +25,12 @@ import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
 import org.mule.tck.testmodels.fruit.Apple;
 
-import org.junit.Test;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Test;
 
 public class VMListenerTestCase extends VMTestCase {
 
@@ -53,6 +54,39 @@ public class VMListenerTestCase extends VMTestCase {
     assertThat(payload.getValue(), is(sameInstance(sentValue)));
     assertThat(payload.getDataType().getType(), equalTo(Apple.class));
     assertAttributes(message.getAttributes(), TRANSIENT_QUEUE_NAME, now);
+  }
+
+  @Test
+  public void listenOneAtATime() throws Exception {
+    final int messageCount = 3;
+    Queue queue = getQueue("synchronousQueue");
+
+    Serializable sentValue = new Apple();
+
+    Runnable emmiter = () -> {
+      for (int i = 0; i < messageCount; i++) {
+        try {
+          queue.offer(sentValue, TIMEOUT);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+
+    Long priorMessageTime = null;
+    new Thread(emmiter).start();
+
+    for (int i = 0; i < messageCount; i++) {
+      CoreEvent event = getCapturedEvent(50000);
+      ZonedDateTime messageTimestamp = (ZonedDateTime) event.getMessage().getPayload().getValue();
+      final long timestamp = messageTimestamp.toInstant().toEpochMilli();
+      if (priorMessageTime != null) {
+        long diff = timestamp - priorMessageTime;
+        assertThat(diff, is(greaterThanOrEqualTo(1000L)));
+      }
+
+      priorMessageTime = timestamp;
+    }
   }
 
   @Test

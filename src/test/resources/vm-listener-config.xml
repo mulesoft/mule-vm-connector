@@ -17,6 +17,13 @@
         <flow-ref name="capture"/>
     </flow>
 
+    <flow name="synchronousListener" maxConcurrency="1">
+        <vm:listener queueName="synchronousQueue" queueType="PERSISTENT" numberOfConsumers="1" />
+        <test:processor class="org.mule.extensions.vm.test.VMTestCase$Sleep" />
+        <set-payload value="#[now()]" />
+        <flow-ref name="capture"/>
+    </flow>
+
     <sub-flow name="capture">
         <test:processor class="org.mule.extensions.vm.test.VMTestCase$EventCaptor" />
     </sub-flow>
