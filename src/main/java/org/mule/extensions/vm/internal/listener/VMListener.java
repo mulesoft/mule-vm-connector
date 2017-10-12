@@ -16,14 +16,17 @@ import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
+import org.mule.runtime.api.component.location.ConfigurationComponentLocator;
+import org.mule.runtime.api.component.location.Location;
 import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.connection.ConnectionProvider;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
-import org.mule.runtime.api.tx.TransactionException;
 import org.mule.runtime.api.scheduler.SchedulerConfig;
 import org.mule.runtime.api.scheduler.SchedulerService;
+import org.mule.runtime.api.tx.TransactionException;
+import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.Alias;
 import org.mule.runtime.extension.api.annotation.execution.OnSuccess;
@@ -41,6 +44,7 @@ import org.mule.runtime.extension.api.runtime.source.SourceCallbackContext;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
@@ -84,11 +88,14 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   @Inject
   private SchedulerService schedulerService;
 
-  private List<Consumer> consumers;
-
-  private Scheduler scheduler;
+  @Inject
+  private ConfigurationComponentLocator componentLocator;
 
   private ComponentLocation location;
+
+  private List<Consumer> consumers;
+  private Scheduler scheduler;
+  private Semaphore semaphore;
 
   @Override
   public void onStart(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) throws MuleException {
@@ -135,12 +142,13 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   @OnTerminate
   public void onTerminate() {
-    // no - op
+    semaphore.release();
   }
 
   private void startConsumers(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) {
     createScheduler();
     consumers = new ArrayList<>(numberOfConsumers);
+    semaphore = new Semaphore(getMaxConcurrency(), false);
     for (int i = 0; i < numberOfConsumers; i++) {
       final Consumer consumer = new Consumer(sourceCallback);
       consumers.add(consumer);
@@ -155,6 +163,11 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         .withPrefix("vm-listener-flow-" + location.getRootContainerName())
         .withShutdownTimeout(queueDescriptor.getTimeout(),
                              queueDescriptor.getTimeoutUnit()));
+  }
+
+  private int getMaxConcurrency() {
+    Flow flow = (Flow) componentLocator.find(Location.builder().globalName(location.getRootContainerName()).build()).get();
+    return flow.getMaxConcurrency();
   }
 
   private class Consumer {
@@ -173,6 +186,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         SourceCallbackContext ctx = sourceCallback.createContext();
         Serializable value;
         try {
+          semaphore.acquire();
           final VMConnection connection = connect(ctx);
           final Queue queue = connection.getQueue(queueDescriptor.getQueueName());
           value = queue.poll(timeout);
@@ -209,10 +223,12 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
           }
         } catch (InterruptedException e) {
           stop();
+          cancel(ctx.getConnection());
           LOGGER.info("Consumer for vm:listener on flow '{}' was interrupted. No more consuming for thread '{}'",
                       location.getRootContainerName(),
                       currentThread().getName());
         } catch (Exception e) {
+          cancel(ctx.getConnection());
           if (LOGGER.isErrorEnabled()) {
             LOGGER.error(format("Consumer for vm:listener on flow '%s' found unexpected exception. Consuming will continue '",
                                 location.getRootContainerName()),
