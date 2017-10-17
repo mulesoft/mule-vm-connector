@@ -12,6 +12,7 @@ import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
 import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.DataType.STRING;
+import static org.mule.tck.junit4.matcher.DataTypeCompatibilityMatcher.assignableTo;
 
 import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.runtime.api.metadata.TypedValue;
@@ -41,7 +42,7 @@ public class VMConsumeTestCase extends VMTestCase {
 
     TypedValue<String> payload = consume().getMessage().getPayload();
     assertThat(payload.getValue(), is(value.getValue()));
-    assertThat(payload.getDataType(), is(JSON_STRING));
+    assertThat(payload.getDataType(), is(assignableTo(JSON_STRING)));
   }
 
   @Test
@@ -56,7 +57,7 @@ public class VMConsumeTestCase extends VMTestCase {
 
     TypedValue<String> payload = consume().getMessage().getPayload();
     assertThat(payload.getValue(), is(STRING_PAYLOAD));
-    assertThat(payload.getDataType(), is(STRING));
+    assertThat(payload.getDataType(), is(assignableTo(STRING)));
   }
 
   @Test
