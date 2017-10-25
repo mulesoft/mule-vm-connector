@@ -8,7 +8,6 @@ package org.mule.extensions.vm.test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.MediaType.APPLICATION_JSON;
@@ -80,11 +79,6 @@ public class VMPublishConsumeTestCase extends VMTestCase {
   @Test
   public void onErrorPropagate() throws Exception {
     runAndExpect("onErrorPropagate", errorType(VM_ERROR_NAMESPACE, QUEUE_TIMEOUT.name()));
-  }
-
-  @Test
-  public void unexistingPublishConsume() throws Exception {
-    runAndExpect("unexistingPublishConsume", errorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name()));
   }
 
   @Test

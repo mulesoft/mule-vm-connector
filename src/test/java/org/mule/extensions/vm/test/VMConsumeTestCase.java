@@ -6,33 +6,32 @@
  */
 package org.mule.extensions.vm.test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.rules.ExpectedException.none;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
-import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.DataType.STRING;
 import static org.mule.tck.junit4.matcher.DataTypeCompatibilityMatcher.assignableTo;
-
 import org.mule.extensions.vm.internal.QueueListenerDescriptor;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
 
-import org.junit.Test;
-
 import java.io.Serializable;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
 public class VMConsumeTestCase extends VMTestCase {
+
+  @Rule
+  public ExpectedException expectedException = none();
 
   @Override
   protected String getConfigFile() {
     return "vm-consume-config.xml";
-  }
-
-  @Override
-  protected void doSetUp() throws Exception {
-    super.doSetUp();
-    vmQueueManager.createQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "consume");
   }
 
   @Test
@@ -43,12 +42,6 @@ public class VMConsumeTestCase extends VMTestCase {
     TypedValue<String> payload = consume().getMessage().getPayload();
     assertThat(payload.getValue(), is(value.getValue()));
     assertThat(payload.getDataType(), is(assignableTo(JSON_STRING)));
-  }
-
-  @Test
-  public void consumeUnexistingQueue() throws Exception {
-    expectedError.expectErrorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name());
-    flowRunner("unexisting").run();
   }
 
   @Test
@@ -63,6 +56,14 @@ public class VMConsumeTestCase extends VMTestCase {
   @Test
   public void emptyQueue() throws Exception {
     expectedError.expectErrorType(VM_ERROR_NAMESPACE, EMPTY_QUEUE.name());
+    flowRunner("consume").run();
+  }
+
+  @Test
+  public void consumeFromQueueWithListener() throws Exception {
+    expectedException.expectCause(instanceOf(IllegalArgumentException.class));
+
+    vmQueueManager.registerListenerQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "consume");
     flowRunner("consume").run();
   }
 

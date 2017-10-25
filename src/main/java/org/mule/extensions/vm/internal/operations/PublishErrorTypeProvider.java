@@ -7,7 +7,6 @@
 package org.mule.extensions.vm.internal.operations;
 
 import static java.util.Collections.unmodifiableSet;
-import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
 import org.mule.runtime.extension.api.annotation.error.ErrorTypeProvider;
 import org.mule.runtime.extension.api.error.ErrorTypeDefinition;
@@ -25,7 +24,6 @@ public class PublishErrorTypeProvider implements ErrorTypeProvider {
   @Override
   public Set<ErrorTypeDefinition> getErrorTypes() {
     Set<ErrorTypeDefinition> errors = new HashSet<>();
-    errors.add(QUEUE_NOT_FOUND);
     errors.add(QUEUE_TIMEOUT);
 
     return unmodifiableSet(errors);
