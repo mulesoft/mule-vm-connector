@@ -68,22 +68,17 @@ public class VMOperations implements Startable, Stoppable {
 
   /**
    * Publishes the given {@code content} into the queue of the given {@code queueName}.
-   * <p>
-   * The queue on which the content is published has to be one for which a {@code vm:listener} exists. Otherwise, a
-   * {@code VM:QUEUE_NOT_FOUND} error is thrown.
    *
    * @param content         the content to be published
    * @param queueDescriptor the queue configuration
    * @param connection      the acting connection
-   * @param location        this processor's location
    */
   @Throws(PublishErrorTypeProvider.class)
   public void publish(@Content TypedValue<Serializable> content,
                       @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
-                      @Connection VMConnection connection,
-                      ComponentLocation location) {
+                      @Connection VMConnection connection) {
 
-    Queue queue = getQueue(queueDescriptor, connection, location, "publish");
+    Queue queue = connection.getQueue(queueDescriptor.getQueueName());
     doPublish(content, queueDescriptor, queue);
   }
 
@@ -91,8 +86,8 @@ public class VMOperations implements Startable, Stoppable {
    * Pull one message from a queue. If a message is not immediately available, it will wait up to the configured
    * {@code queueTimeout}, after which a {@code VM:QUEUE_TIMEOUT} error will be thrown.
    * <p>
-   * The queue on which the content is published has to be one for which a {@code vm:listener} exists. Otherwise, a
-   * {@code VM:QUEUE_NOT_FOUND} error is thrown.
+   * The queue on which the content is published has to be one for which a {@code <vm:listener>} <b>doesn't </b> exists.
+   * Consuming from queues on which a {@code <vm:listener>} exists is not allowed.
    *
    * @param queueDescriptor the queue configuration
    * @param connection      the acting connection
@@ -104,7 +99,8 @@ public class VMOperations implements Startable, Stoppable {
                                                            @Connection VMConnection connection,
                                                            ComponentLocation location) {
 
-    Queue queue = getQueue(queueDescriptor, connection, location, "consume");
+    queueManager.validateNoListenerOnQueue(queueDescriptor.getQueueName(), "consume", location);
+    Queue queue = connection.getQueue(queueDescriptor.getQueueName());
     return doConsume(queue, queueDescriptor)
         .map(value -> asConsumeResponse(value, queueDescriptor))
         .orElseThrow(() -> new ModuleException(format(
@@ -120,22 +116,20 @@ public class VMOperations implements Startable, Stoppable {
    * <p>
    * The temporal reply queue is automatically disposed after a response is received or the timeout expires.
    * <p>
-   * The queue on which the content is published has to be one for which a {@code vm:listener} exists. Otherwise, a
-   * {@code VM:QUEUE_NOT_FOUND} error is thrown.
+   * The queue on which the content is published has to be one for which a {@code <vm:listener>} <b>doesn't </b> exists.
+   * Consuming from queues on which a {@code <vm:listener>} exists is not allowed.
    *
    * @param content         the content to be published
    * @param queueDescriptor the queue configuration
    * @param connection      the acting connection
-   * @param location        this processor's location
    * @return The response generated from the invoked listener's flow
    */
   @Throws(PublishConsumeErrorTypeProvider.class)
   public Result<Serializable, VMMessageAttributes> publishConsume(@Content TypedValue<Serializable> content,
                                                                   @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
-                                                                  @Connection VMConnection connection,
-                                                                  ComponentLocation location) {
+                                                                  @Connection VMConnection connection) {
 
-    final Queue queue = getQueue(queueDescriptor, connection, location, "publishConsume");
+    final Queue queue = connection.getQueue(queueDescriptor.getQueueName());
     final Queue replyToQueue = queueManager.createReplyToQueue(queue, connection);
 
     try {
@@ -196,11 +190,4 @@ public class VMOperations implements Startable, Stoppable {
                                      e);
     }
   }
-
-  private Queue getQueue(QueueDescriptor queueDescriptor, VMConnection connection, ComponentLocation location,
-                         String operationName) {
-    queueManager.validateQueue(queueDescriptor.getQueueName(), operationName, location);
-    return connection.getQueue(queueDescriptor.getQueueName());
-  }
-
 }

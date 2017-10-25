@@ -109,6 +109,6 @@ public class VMTxTestCase extends VMTestCase {
   }
 
   private void simulateListener() throws InitialisationException {
-    vmQueueManager.createQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "listener");
+    vmQueueManager.registerListenerQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "listener");
   }
 }

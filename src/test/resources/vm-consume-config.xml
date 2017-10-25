@@ -10,8 +10,4 @@
         <custom-processor class="org.mule.extensions.vm.test.VMTestCase$EventCaptor" />
     </flow>
 
-    <flow name="unexisting">
-        <vm:consume queueName="notThere" timeout="1" />
-    </flow>
-    
 </mule>

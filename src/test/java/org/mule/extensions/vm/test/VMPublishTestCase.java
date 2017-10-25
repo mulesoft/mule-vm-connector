@@ -10,9 +10,7 @@ import static java.time.LocalDateTime.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
-import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
@@ -57,11 +55,6 @@ public class VMPublishTestCase extends VMTestCase {
   @Test
   public void publishToPersistent() throws Exception {
     assertPublish("publishToPersistent", PERSISTENT_QUEUE_NAME);
-  }
-
-  @Test
-  public void publishToUnexistingQueue() throws Exception {
-    runAndExpect("publishToUnexisting", errorType(VM_ERROR_NAMESPACE, QUEUE_NOT_FOUND.name()));
   }
 
   @Test

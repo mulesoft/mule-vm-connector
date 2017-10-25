@@ -56,8 +56,6 @@ import org.slf4j.Logger;
  * <p>
  * VM queues are created by placing listeners on them, which is why this listener contains parameters on the queue's
  * behaviour, such as it being persistent or not, the max capacity, etc.
- * <p>
- * The VM connector can only be used to publish and consume messages from queues for which a listener has been defined.
  *
  * @since 1.0
  */
@@ -99,7 +97,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   @Override
   public void onStart(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) throws MuleException {
-    connectorQueueManager.createQueue(queueDescriptor, location.getRootContainerName());
+    connectorQueueManager.registerListenerQueue(queueDescriptor, location.getRootContainerName());
     startConsumers(sourceCallback);
   }
 
@@ -108,6 +106,8 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
     if (consumers != null) {
       consumers.forEach(Consumer::stop);
     }
+
+    connectorQueueManager.unregisterListenerQueue(queueDescriptor.getQueueName());
 
     if (scheduler != null) {
       scheduler.stop();
@@ -224,13 +224,13 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         } catch (InterruptedException e) {
           stop();
           cancel(ctx.getConnection());
-          LOGGER.info("Consumer for vm:listener on flow '{}' was interrupted. No more consuming for thread '{}'",
+          LOGGER.info("Consumer for <vm:listener> on flow '{}' was interrupted. No more consuming for thread '{}'",
                       location.getRootContainerName(),
                       currentThread().getName());
         } catch (Exception e) {
           cancel(ctx.getConnection());
           if (LOGGER.isErrorEnabled()) {
-            LOGGER.error(format("Consumer for vm:listener on flow '%s' found unexpected exception. Consuming will continue '",
+            LOGGER.error(format("Consumer for <vm:listener> on flow '%s' found unexpected exception. Consuming will continue '",
                                 location.getRootContainerName()),
                          e);
           }

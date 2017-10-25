@@ -15,7 +15,10 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.rules.ExpectedException.none;
+import static org.mockito.Mockito.mock;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
+import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
@@ -30,9 +33,14 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 public class VMListenerTestCase extends VMTestCase {
+
+  @Rule
+  public ExpectedException expectedException = none();
 
   @Override
   protected String getConfigFile() {
@@ -154,5 +162,17 @@ public class VMListenerTestCase extends VMTestCase {
         }
       }
     });
+  }
+
+  @Test
+  public void listenerRegistered() throws Exception {
+    expectedException.expect(IllegalArgumentException.class);
+    vmQueueManager.validateNoListenerOnQueue(TRANSIENT_QUEUE_NAME, "test", mock(ComponentLocation.class));
+  }
+
+  @Test
+  public void listenerUnregistersWhenStopped() throws Exception {
+    ((Stoppable) getFlowConstruct("transientListener")).stop();
+    vmQueueManager.validateNoListenerOnQueue(TRANSIENT_QUEUE_NAME, "test", mock(ComponentLocation.class));
   }
 }

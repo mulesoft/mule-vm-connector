@@ -8,7 +8,6 @@ package org.mule.extensions.vm.internal.operations;
 
 import static java.util.Collections.unmodifiableSet;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
-import static org.mule.extensions.vm.api.VMError.QUEUE_NOT_FOUND;
 import org.mule.runtime.extension.api.annotation.error.ErrorTypeProvider;
 import org.mule.runtime.extension.api.error.ErrorTypeDefinition;
 
@@ -25,7 +24,6 @@ public class ConsumeErrorTypeProvider implements ErrorTypeProvider {
   @Override
   public Set<ErrorTypeDefinition> getErrorTypes() {
     Set<ErrorTypeDefinition> errors = new HashSet<>();
-    errors.add(QUEUE_NOT_FOUND);
     errors.add(EMPTY_QUEUE);
 
     return unmodifiableSet(errors);

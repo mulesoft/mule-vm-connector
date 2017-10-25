@@ -19,11 +19,6 @@ import java.util.Optional;
 public enum VMError implements ErrorTypeDefinition<VMError> {
 
   /**
-   * The reference queue does not exists or wasn't defined in a {@code vm:listener}
-   */
-  QUEUE_NOT_FOUND,
-
-  /**
    * Timeout exceeded waiting for response on a queue
    */
   QUEUE_TIMEOUT,
