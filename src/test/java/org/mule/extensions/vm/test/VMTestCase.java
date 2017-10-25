@@ -38,8 +38,7 @@ import javax.inject.Named;
 
 import org.junit.Rule;
 
-@ArtifactClassLoaderRunnerConfig(exportPluginClasses = VMConnectorQueueManager.class,
-    sharedRuntimeLibs = {"org.mule.tests:mule-tests-unit"})
+@ArtifactClassLoaderRunnerConfig(exportPluginClasses = VMConnectorQueueManager.class)
 public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
 
   protected static final String STRING_PAYLOAD = "Hello";
