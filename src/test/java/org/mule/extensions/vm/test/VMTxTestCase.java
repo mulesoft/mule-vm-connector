@@ -35,7 +35,7 @@ public class VMTxTestCase extends VMTestCase {
 
   @Override
   protected String[] getConfigFiles() {
-    return new String[]{"vm-tx-config.xml", "vm-configs.xml"};
+    return new String[] {"vm-tx-config.xml", "vm-configs.xml"};
   }
 
   @Test

@@ -12,6 +12,7 @@ import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.connection.ConnectionProvider;
 import org.mule.runtime.api.connection.ConnectionValidationResult;
 import org.mule.runtime.core.api.util.queue.QueueManager;
+import org.mule.runtime.extension.api.connectivity.NoConnectivityTest;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -21,7 +22,7 @@ import javax.inject.Named;
  *
  * @since 1.0
  */
-public class VMConnectionProvider implements ConnectionProvider<VMConnection> {
+public class VMConnectionProvider implements ConnectionProvider<VMConnection>, NoConnectivityTest {
 
   @Inject
   @Named(OBJECT_QUEUE_MANAGER)

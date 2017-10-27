@@ -44,7 +44,7 @@ public class VMListenerTestCase extends VMTestCase {
 
   @Override
   protected String[] getConfigFiles() {
-    return new String[]{"vm-listener-config.xml", "vm-configs.xml"};
+    return new String[] {"vm-listener-config.xml", "vm-configs.xml"};
   }
 
   @Test

@@ -28,7 +28,7 @@ public class QueueNamesValueProvider implements ValueProvider {
   @Override
   public Set<Value> resolve() throws ValueResolvingException {
     return getValuesFor(connector.getQueueDefinitions().stream()
-                            .map(QueueDefinition::getQueueName)
-                            .collect(toList()));
+        .map(QueueDefinition::getQueueName)
+        .collect(toList()));
   }
 }

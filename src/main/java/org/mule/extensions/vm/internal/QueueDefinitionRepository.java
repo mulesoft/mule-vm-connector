@@ -43,7 +43,7 @@ public class QueueDefinitionRepository {
 
         findByName(queueName).ifPresent(previous -> {
           throw new IllegalArgumentException(format("<vm:config> '%s' is trying to define queue '%s' which is already defined "
-                                                        + "by config '%s'", previous.getFirst().getName()));
+              + "by config '%s'", previous.getFirst().getName()));
         });
 
         QueueProfile profile = new QueueProfile(definition.getMaxOutstandingMessages(), definition.getQueueType().isPersistent());
