@@ -7,8 +7,17 @@
       http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
+    <vm:config name="vm">
+        <vm:queues>
+            <vm:queue queueName="queue" queueType="TRANSIENT" />
+            <vm:queue queueName="onErrorContinue" queueType="TRANSIENT" />
+            <vm:queue queueName="onErrorPropagate" queueType="TRANSIENT" />
+            <vm:queue queueName="failQueue" queueType="TRANSIENT" />
+        </vm:queues>
+    </vm:config>
+    
     <flow name="listener">
-        <vm:listener queueName="queue" queueType="TRANSIENT">
+        <vm:listener queueName="queue" config-ref="vm">
             <vm:response>
                 <vm:content>
                     #[lower(payload.salute)]
@@ -19,7 +28,7 @@
     </flow>
 
     <flow name="onErrorContinueListener">
-        <vm:listener queueName="onErrorContinue" queueType="TRANSIENT">
+        <vm:listener queueName="onErrorContinue" config-ref="vm">
             <vm:response>
                 <vm:content>
                     #[lower(payload.salute)]
@@ -37,7 +46,7 @@
     </flow>
 
     <flow name="onErrorPropagateListener">
-        <vm:listener queueName="onErrorPropagate" queueType="TRANSIENT" />
+        <vm:listener queueName="onErrorPropagate" config-ref="vm" />
         <try>
             <test:processor throwException="true" />
             <error-handler>
@@ -49,24 +58,24 @@
     </flow>
 
     <flow name="failListener">
-        <vm:listener queueName="failQueue" queueType="TRANSIENT" />
+        <vm:listener queueName="failQueue" config-ref="vm" />
         <test:processor class="org.mule.extensions.vm.test.VMPublishConsumeTestCase$FailureProcessor" />
     </flow>
 
     <flow name="publishConsume">
-        <vm:publish-consume queueName="queue" />
+        <vm:publish-consume queueName="queue" config-ref="vm"/>
     </flow>
 
     <flow name="onErrorContinue">
-        <vm:publish-consume queueName="onErrorContinue" />
+        <vm:publish-consume queueName="onErrorContinue" config-ref="vm"/>
     </flow>
 
     <flow name="onErrorPropagate">
-        <vm:publish-consume queueName="onErrorPropagate" />
+        <vm:publish-consume queueName="onErrorPropagate" config-ref="vm"/>
     </flow>
     
     <flow name="failingPublishConsume">
-        <vm:publish-consume queueName="failQueue" />
+        <vm:publish-consume queueName="failQueue" config-ref="vm"/>
     </flow>
 
 </mule>

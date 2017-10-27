@@ -8,16 +8,27 @@ package org.mule.extensions.vm.internal;
  */
 
 
+import static org.mule.runtime.api.meta.ExpressionSupport.NOT_SUPPORTED;
 import org.mule.extensions.vm.api.VMError;
 import org.mule.extensions.vm.internal.connection.VMConnectionProvider;
 import org.mule.extensions.vm.internal.listener.VMListener;
 import org.mule.extensions.vm.internal.operations.VMOperations;
+import org.mule.runtime.api.exception.MuleException;
+import org.mule.runtime.api.lifecycle.Startable;
+import org.mule.runtime.extension.api.annotation.Alias;
+import org.mule.runtime.extension.api.annotation.Expression;
 import org.mule.runtime.extension.api.annotation.Extension;
 import org.mule.runtime.extension.api.annotation.Operations;
 import org.mule.runtime.extension.api.annotation.Sources;
 import org.mule.runtime.extension.api.annotation.connectivity.ConnectionProviders;
 import org.mule.runtime.extension.api.annotation.dsl.xml.Xml;
 import org.mule.runtime.extension.api.annotation.error.ErrorTypes;
+import org.mule.runtime.extension.api.annotation.param.Parameter;
+import org.mule.runtime.extension.api.annotation.param.RefName;
+
+import java.util.List;
+
+import javax.inject.Inject;
 
 /**
  * The VM Connector is used for intra/inter app communication. The communication is done through asynchronous queues, which can
@@ -33,6 +44,8 @@ import org.mule.runtime.extension.api.annotation.error.ErrorTypes;
  *
  * In either way, transactions are always supported.
  *
+ * Each config defines its own set of queues. Those queues are only visible to components referencing that config.
+ *
  * @since 1.0
  */
 //TODO: EE-5614 - migrate clustering tests
@@ -42,6 +55,32 @@ import org.mule.runtime.extension.api.annotation.error.ErrorTypes;
 @Operations(VMOperations.class)
 @ConnectionProviders(VMConnectionProvider.class)
 @ErrorTypes(VMError.class)
-public class VMConnector {
+public class VMConnector implements Startable {
 
+  @Inject
+  private VMConnectorQueueManager queueManager;
+
+  @RefName
+  private String name;
+
+  /**
+   * The queues that this config owns
+   */
+  @Parameter
+  @Expression(NOT_SUPPORTED)
+  @Alias("queues")
+  private List<QueueDefinition> queueDefinitions;
+
+  @Override
+  public void start() throws MuleException {
+    queueManager.createQueues(this, queueDefinitions);
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public List<QueueDefinition> getQueueDefinitions() {
+    return queueDefinitions;
+  }
 }

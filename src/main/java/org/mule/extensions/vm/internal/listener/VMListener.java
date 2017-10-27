@@ -11,8 +11,9 @@ import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.extensions.vm.api.VMMessageAttributes;
-import org.mule.extensions.vm.internal.QueueListenerDescriptor;
+import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
+import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
@@ -31,6 +32,7 @@ import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.Alias;
 import org.mule.runtime.extension.api.annotation.execution.OnSuccess;
 import org.mule.runtime.extension.api.annotation.execution.OnTerminate;
+import org.mule.runtime.extension.api.annotation.param.Config;
 import org.mule.runtime.extension.api.annotation.param.Connection;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
@@ -70,7 +72,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   private VMConnectorQueueManager connectorQueueManager;
 
   @ParameterGroup(name = "queue")
-  private QueueListenerDescriptor queueDescriptor;
+  private QueueDescriptor queueDescriptor;
 
   /**
    * The amount of concurrent consumers to be placed on the queue. As the number of consumers increases,
@@ -79,6 +81,9 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   @Parameter
   @Optional(defaultValue = "4")
   private int numberOfConsumers;
+
+  @Config
+  private VMConnector config;
 
   @Connection
   private ConnectionProvider<VMConnection> connectionProvider;
@@ -97,7 +102,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   @Override
   public void onStart(SourceCallback<Serializable, VMMessageAttributes> sourceCallback) throws MuleException {
-    connectorQueueManager.registerListenerQueue(queueDescriptor, location.getRootContainerName());
+    connectorQueueManager.registerListenerQueue(config, queueDescriptor.getQueueName(), location);
     startConsumers(sourceCallback);
   }
 

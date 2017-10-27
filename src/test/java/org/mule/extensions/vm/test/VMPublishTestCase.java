@@ -44,7 +44,7 @@ public class VMPublishTestCase extends VMTestCase {
 
   @Override
   protected String[] getConfigFiles() {
-    return new String[] {"vm-listener-config.xml", "vm-publish-config.xml"};
+    return new String[] {"vm-listener-config.xml", "vm-publish-config.xml", "vm-configs.xml"};
   }
 
   @Test

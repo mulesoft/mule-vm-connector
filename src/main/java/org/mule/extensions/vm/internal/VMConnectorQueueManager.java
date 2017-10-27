@@ -15,15 +15,17 @@ import org.mule.extensions.vm.internal.listener.VMListener;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.exception.MuleRuntimeException;
+import org.mule.runtime.api.lifecycle.Initialisable;
 import org.mule.runtime.api.lifecycle.InitialisationException;
 import org.mule.runtime.api.lifecycle.Stoppable;
+import org.mule.runtime.api.util.Pair;
 import org.mule.runtime.core.api.config.QueueProfile;
 import org.mule.runtime.core.api.util.UUID;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.core.api.util.queue.QueueConfiguration;
 import org.mule.runtime.core.api.util.queue.QueueManager;
-import org.mule.runtime.extension.api.exception.ModuleException;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +43,7 @@ import org.slf4j.Logger;
  *
  * @since 1.0
  */
-public class VMConnectorQueueManager implements Stoppable {
+public class VMConnectorQueueManager implements Initialisable, Stoppable {
 
   private static final Logger LOGGER = getLogger(VMConnectorQueueManager.class);
 
@@ -49,8 +51,14 @@ public class VMConnectorQueueManager implements Stoppable {
   @Named(OBJECT_QUEUE_MANAGER)
   private QueueManager queueManager;
 
-  private Map<String, String> listenerQueues = new ConcurrentHashMap<>();
+  private QueueDefinitionRepository definitionRepository;
+  private Map<String, ComponentLocation> listenerQueues = new ConcurrentHashMap<>();
   private Map<String, Queue> replyToQueues = new ConcurrentHashMap<>();
+
+  @Override
+  public void initialise() throws InitialisationException {
+    definitionRepository = new QueueDefinitionRepository(queueManager);
+  }
 
   /**
    * Disposes all the temporal replyTo queues
@@ -71,26 +79,76 @@ public class VMConnectorQueueManager implements Stoppable {
   }
 
   /**
+   * Creates and configures all the queue {@code definitions} and tracks the given {@code config} as their owner
+   * @param config a {@link VMConnector}
+   * @param definitions                  the queue definitions
+   * @throws InitialisationException
+   */
+  public void createQueues(VMConnector config, Collection<QueueDefinition> definitions) throws InitialisationException {
+    definitionRepository.createQueues(config, definitions);
+  }
+
+  /**
+   * Validates that a queue of the given {@code queueName} was created through {@link #createQueues(VMConnector, Collection)}
+   * and that it was actually defined on the give {@code config}
+   *
+   * @param queueName the queue name
+   * @param config the owner
+   */
+  public void validateQueue(String queueName, VMConnector config) {
+    VMConnector owner = definitionRepository.findByName(queueName)
+        .map(Pair::getFirst)
+        .orElseThrow(() -> new IllegalArgumentException(format("queue '%s' is not defined", queueName)));
+
+    if (!owner.getName().equals(config.getName())) {
+      throw new IllegalArgumentException(format("queue '%s' cannot be accessed from component with config-ref '%s' because "
+          + "it was defined on config '%s",
+                                                queueName, config.getName(), owner.getName()));
+    }
+  }
+
+  /**
    * Creates a {@link Queue} for a {@link VMListener}, making sure that no other {@link VMListener} has already created that
    * queue
    *
-   * @param queueDescriptor the queue's configuration
-   * @param location        the location of the defining component
-   * @throws InitialisationException
+  /**
+   * Tracks that the queue of the given {@code queueName} has a listener on the given {@code location}, backed by the given
+   * {@code config}.
+   *
+   * It validates that the queue was created through {@link #createQueues(VMConnector, Collection)} and that the given
+   * {@code config} is actually the queue's owner
+   *
+   * @param config the owner config
+   * @param queueName the name of the queue
+   * @param location the listener's location
    */
-  public void registerListenerQueue(QueueListenerDescriptor queueDescriptor, String location) throws InitialisationException {
-    String previous = listenerQueues.put(queueDescriptor.getQueueName(), location);
-    if (previous != null) {
-      throw new IllegalArgumentException(format("Flow '%s' has a vm:listener which declares VM queue '%s', but flow"
-          + "'%s' is trying to declare another queue with the same name.",
-                                                previous,
-                                                queueDescriptor.getQueueName(),
-                                                location));
+  public void registerListenerQueue(VMConnector config, String queueName, ComponentLocation location)
+      throws InitialisationException {
+    Pair<VMConnector, QueueDefinition> definitionPair = definitionRepository.findByName(queueName)
+        .orElseThrow(() -> new IllegalArgumentException(format("Flow '%s' declares a <vm:listener> listening to queue '%s', but "
+            + "such queue is not defined",
+                                                               location.getRootContainerName(), queueName)));
+
+    if (!definitionPair.getFirst().getName().equals(config.getName())) {
+      throw new IllegalArgumentException(format("Flow '%s' has a <vm:listener> with config-ref '%s', listening to queue '%s', "
+          + "but that queue is defined on config '%s'. Listeners can only access queues "
+          + "defined in their corresponding config",
+                                                location.getRootContainerName(),
+                                                config.getName(),
+                                                queueName,
+                                                definitionPair.getFirst().getName()));
     }
 
-    QueueProfile profile =
-        new QueueProfile(queueDescriptor.getMaxOutstandingMessages(), queueDescriptor.getQueueType().isPersistent());
-    profile.configureQueue(queueDescriptor.getQueueName(), queueManager);
+    ComponentLocation previous = listenerQueues.get(queueName);
+    if (previous != null) {
+      throw new IllegalArgumentException(format("Flow '%s' has a <vm:listener> listening to queue '%s', but flow"
+          + "'%s' is trying to declare another listener to the same queue. Only one listener is allowed per queue.",
+                                                previous.getRootContainerName(),
+                                                queueName,
+                                                location.getRootContainerName()));
+    }
+
+    listenerQueues.put(queueName, location);
   }
 
   public void unregisterListenerQueue(String queueName) {
@@ -98,13 +156,11 @@ public class VMConnectorQueueManager implements Stoppable {
   }
 
   /**
-   * Returns the {@link QueueConfiguration} for the queue of the given {@code queueName}. If a configuration is not
-   * found, a {@code VM:QUEUE_NOT_FOUND} error is thrown. However, that should only happen if a matching call to
-   * {@link #registerListenerQueue(QueueListenerDescriptor, String)} hasn't yet happened.
+   * Returns the {@link QueueConfiguration} for the queue of the given {@code queueName}.
    *
    * @param queueName the name of the queue
    * @return a {@link QueueConfiguration}
-   * @throws ModuleException if no configuration found for that queue.
+   * @throws IllegalArgumentException if the queue doesn't exists
    */
   public QueueConfiguration getQueueConfiguration(String queueName) {
     return queueManager.getQueueConfiguration(queueName)
@@ -159,19 +215,20 @@ public class VMConnectorQueueManager implements Stoppable {
   }
 
   /**
-   * Validates that {@code queueName} refers to a queue previously created through
-   * {@link #registerListenerQueue(QueueListenerDescriptor, String)}. If not, a {@code VM:QUEUE_NOT_FOUND} exception is thrown.
+   * Validates that no listener was registered for the {@code queueName} through the
+   * {@link #registerListenerQueue(VMConnector, String, ComponentLocation)} method
    *
    * @param queueName     the name of the queue to validate
    * @param operationName the name of the component which is asking for the queue
    * @param location      the location of the component asking for the queue
    */
   public void validateNoListenerOnQueue(String queueName, String operationName, ComponentLocation location) {
-    String listenerLocation = listenerQueues.get(queueName);
+    ComponentLocation listenerLocation = listenerQueues.get(queueName);
     if (listenerLocation != null) {
-      throw new IllegalArgumentException(format("Operation '<vm:%s>' in Flow '%s' is trying to consume from queue of name '%s', but "
-          + "a <vm:listener> is already listening on it. It's not allowed to consume from a queue on which "
-          + "a listener already exists", operationName, location.getRootContainerName(), queueName));
+      throw new IllegalArgumentException(format("Operation '<vm:%s>' in Flow '%s' is trying to consume from queue '%s', but "
+          + "Flow '%s' defines a <vm:listener> on that queue. It's not allowed to consume from a queue on which "
+          + "a listener already exists", operationName, location.getRootContainerName(), queueName,
+                                                listenerLocation.getRootContainerName()));
     }
   }
 }

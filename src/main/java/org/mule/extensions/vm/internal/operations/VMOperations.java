@@ -14,6 +14,7 @@ import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
+import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
@@ -26,6 +27,7 @@ import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerService;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.error.Throws;
+import org.mule.runtime.extension.api.annotation.param.Config;
 import org.mule.runtime.extension.api.annotation.param.Connection;
 import org.mule.runtime.extension.api.annotation.param.Content;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
@@ -76,9 +78,10 @@ public class VMOperations implements Startable, Stoppable {
   @Throws(PublishErrorTypeProvider.class)
   public void publish(@Content TypedValue<Serializable> content,
                       @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
+                      @Config VMConnector config,
                       @Connection VMConnection connection) {
 
-    Queue queue = connection.getQueue(queueDescriptor.getQueueName());
+    Queue queue = getQueue(queueDescriptor, config, connection);
     doPublish(content, queueDescriptor, queue);
   }
 
@@ -96,11 +99,12 @@ public class VMOperations implements Startable, Stoppable {
    */
   @Throws(ConsumeErrorTypeProvider.class)
   public Result<Serializable, VMMessageAttributes> consume(@ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
+                                                           @Config VMConnector config,
                                                            @Connection VMConnection connection,
                                                            ComponentLocation location) {
 
     queueManager.validateNoListenerOnQueue(queueDescriptor.getQueueName(), "consume", location);
-    Queue queue = connection.getQueue(queueDescriptor.getQueueName());
+    Queue queue = getQueue(queueDescriptor, config, connection);
     return doConsume(queue, queueDescriptor)
         .map(value -> asConsumeResponse(value, queueDescriptor))
         .orElseThrow(() -> new ModuleException(format(
@@ -127,9 +131,10 @@ public class VMOperations implements Startable, Stoppable {
   @Throws(PublishConsumeErrorTypeProvider.class)
   public Result<Serializable, VMMessageAttributes> publishConsume(@Content TypedValue<Serializable> content,
                                                                   @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
+                                                                  @Config VMConnector config,
                                                                   @Connection VMConnection connection) {
 
-    final Queue queue = connection.getQueue(queueDescriptor.getQueueName());
+    final Queue queue = getQueue(queueDescriptor, config, connection);
     final Queue replyToQueue = queueManager.createReplyToQueue(queue, connection);
 
     try {
@@ -189,5 +194,12 @@ public class VMOperations implements Startable, Stoppable {
                                                                 queueDescriptor.getQueueName())),
                                      e);
     }
+  }
+
+  private Queue getQueue(QueueDescriptor queueDescriptor, VMConnector config, VMConnection connection) {
+    final String queueName = queueDescriptor.getQueueName();
+
+    queueManager.validateQueue(queueName, config);
+    return connection.getQueue(queueName);
   }
 }

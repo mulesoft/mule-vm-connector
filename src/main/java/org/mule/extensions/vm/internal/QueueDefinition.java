@@ -7,23 +7,34 @@
 package org.mule.extensions.vm.internal;
 
 import static org.mule.extensions.vm.api.QueueType.TRANSIENT;
+import static org.mule.runtime.api.meta.ExpressionSupport.NOT_SUPPORTED;
 import org.mule.extensions.vm.api.QueueType;
+import org.mule.runtime.extension.api.annotation.Alias;
+import org.mule.runtime.extension.api.annotation.Expression;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 
 /**
- * Specialization of {@link QueueDescriptor} which adds additional parameters needed
- * when used in a {@code vm:listener}
+ * Defines a queue and its properties
  *
  * @since 1.0
  */
-public class QueueListenerDescriptor extends QueueDescriptor {
+@Alias("queue")
+public class QueueDefinition {
+
+  /**
+   * The name of the queue
+   */
+  @Parameter
+  @Expression(NOT_SUPPORTED)
+  private String queueName;
 
   /**
    * Whether the queue is transient or persistent
    */
   @Parameter
   @Optional(defaultValue = "TRANSIENT")
+  @Expression(NOT_SUPPORTED)
   private QueueType queueType = TRANSIENT;
 
   /**
@@ -33,10 +44,8 @@ public class QueueListenerDescriptor extends QueueDescriptor {
   @Optional(defaultValue = "0")
   private int maxOutstandingMessages = 0;
 
-  public QueueListenerDescriptor() {}
-
-  public QueueListenerDescriptor(String queueName) {
-    super(queueName);
+  public String getQueueName() {
+    return queueName;
   }
 
   public QueueType getQueueType() {

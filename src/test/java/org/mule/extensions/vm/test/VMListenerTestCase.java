@@ -43,8 +43,8 @@ public class VMListenerTestCase extends VMTestCase {
   public ExpectedException expectedException = none();
 
   @Override
-  protected String getConfigFile() {
-    return "vm-listener-config.xml";
+  protected String[] getConfigFiles() {
+    return new String[] {"vm-listener-config.xml", "vm-configs.xml"};
   }
 
   @Test

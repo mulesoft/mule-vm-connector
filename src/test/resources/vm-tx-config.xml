@@ -8,19 +8,19 @@
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
     <flow name="listener" initialState="stopped">
-        <vm:listener queueName="transientQueue" queueType="TRANSIENT" transactionalAction="ALWAYS_BEGIN" />
+        <vm:listener queueName="transientQueue" transactionalAction="ALWAYS_BEGIN" config-ref="vm" />
         <flow-ref name="capture" />
     </flow>
 
     <flow name="failingListener" initialState="stopped">
-        <vm:listener queueName="transientQueue" queueType="TRANSIENT" transactionalAction="ALWAYS_BEGIN"/>
+        <vm:listener queueName="transientQueue" transactionalAction="ALWAYS_BEGIN" config-ref="vm"/>
         <flow-ref name="capture" />
         <test:processor throwException="true" />
     </flow>
 
     <flow name="publishInTx">
         <try transactionalAction="BEGIN_OR_JOIN">
-            <vm:publish queueName="transientQueue" />
+            <vm:publish queueName="transientQueue" config-ref="vm"/>
             <flow-ref name="fail" />
         </try>
     </flow>

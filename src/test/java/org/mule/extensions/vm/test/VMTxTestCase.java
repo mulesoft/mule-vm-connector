@@ -10,28 +10,32 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
-
-import org.mule.extensions.vm.internal.QueueListenerDescriptor;
+import static org.mockito.Mockito.mock;
+import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
-import org.mule.runtime.api.lifecycle.InitialisationException;
+import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.event.CoreEvent;
+import org.mule.runtime.core.api.extension.ExtensionManager;
 import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
 
-import org.junit.Test;
-
 import javax.inject.Inject;
+
+import org.junit.Test;
 
 public class VMTxTestCase extends VMTestCase {
 
   @Inject
   private VMConnectorQueueManager vmQueueManager;
 
+  @Inject
+  private ExtensionManager extensionManager;
+
   @Override
-  protected String getConfigFile() {
-    return "vm-tx-config.xml";
+  protected String[] getConfigFiles() {
+    return new String[] {"vm-tx-config.xml", "vm-configs.xml"};
   }
 
   @Test
@@ -108,7 +112,8 @@ public class VMTxTestCase extends VMTestCase {
     flow.stop();
   }
 
-  private void simulateListener() throws InitialisationException {
-    vmQueueManager.registerListenerQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "listener");
+  private void simulateListener() throws Exception {
+    VMConnector config = (VMConnector) extensionManager.getConfiguration("vm", testEvent()).getValue();
+    vmQueueManager.registerListenerQueue(config, TRANSIENT_QUEUE_NAME, mock(ComponentLocation.class));
   }
 }

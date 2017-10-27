@@ -7,18 +7,24 @@
       http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
+    <vm:config name="sync">
+        <vm:queues>
+            <vm:queue queueName="synchronousQueue" queueType="PERSISTENT" />
+        </vm:queues>
+    </vm:config>
+
     <flow name="transientListener">
-        <vm:listener queueName="transientQueue" queueType="TRANSIENT"/>
+        <vm:listener queueName="transientQueue" config-ref="vm" />
         <flow-ref name="capture"/>
     </flow>
 
     <flow name="persistentListener">
-        <vm:listener queueName="persistentQueue" queueType="PERSISTENT"/>
+        <vm:listener queueName="persistentQueue" config-ref="vm"/>
         <flow-ref name="capture"/>
     </flow>
 
     <flow name="synchronousListener" maxConcurrency="1">
-        <vm:listener queueName="synchronousQueue" queueType="PERSISTENT" numberOfConsumers="1" />
+        <vm:listener queueName="synchronousQueue" numberOfConsumers="1" config-ref="sync"/>
         <test:processor class="org.mule.extensions.vm.test.VMTestCase$Sleep" />
         <set-payload value="#[now()]" />
         <flow-ref name="capture"/>

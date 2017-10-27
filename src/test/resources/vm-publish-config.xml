@@ -6,13 +6,13 @@
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
     <flow name="publishToTransient">
-        <vm:publish queueName="transientQueue">
+        <vm:publish queueName="transientQueue" config-ref="vm">
             <vm:content>#[payload]</vm:content>
         </vm:publish>
     </flow>
 
     <flow name="publishToPersistent">
-        <vm:publish queueName="persistentQueue">
+        <vm:publish queueName="persistentQueue" config-ref="vm">
             <vm:content>#[payload]</vm:content>
         </vm:publish>
     </flow>
