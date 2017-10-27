@@ -5,9 +5,11 @@
       xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
-    <flow name="consume">
-        <vm:consume queueName="transientQueue" config-ref="vm" />
-        <custom-processor class="org.mule.extensions.vm.test.VMTestCase$EventCaptor" />
-    </flow>
+    <vm:config name="vm">
+        <vm:queues>
+            <vm:queue queueName="transientQueue" queueType="TRANSIENT" />
+            <vm:queue queueName="persistentQueue" queueType="PERSISTENT" />
+        </vm:queues>
+    </vm:config>
 
 </mule>

@@ -10,15 +10,20 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.rules.ExpectedException.none;
+import static org.mockito.Mockito.mock;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.DataType.STRING;
 import static org.mule.tck.junit4.matcher.DataTypeCompatibilityMatcher.assignableTo;
-import org.mule.extensions.vm.internal.QueueListenerDescriptor;
+import org.mule.extensions.vm.internal.VMConnector;
+import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
+import org.mule.runtime.core.api.extension.ExtensionManager;
 
 import java.io.Serializable;
+
+import javax.inject.Inject;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,9 +34,12 @@ public class VMConsumeTestCase extends VMTestCase {
   @Rule
   public ExpectedException expectedException = none();
 
+  @Inject
+  private ExtensionManager extensionManager;
+
   @Override
-  protected String getConfigFile() {
-    return "vm-consume-config.xml";
+  protected String[] getConfigFiles() {
+    return new String[]{"vm-configs.xml", "vm-consume-config.xml"};
   }
 
   @Test
@@ -63,7 +71,9 @@ public class VMConsumeTestCase extends VMTestCase {
   public void consumeFromQueueWithListener() throws Exception {
     expectedException.expectCause(instanceOf(IllegalArgumentException.class));
 
-    vmQueueManager.registerListenerQueue(new QueueListenerDescriptor(TRANSIENT_QUEUE_NAME), "consume");
+    VMConnector config = (VMConnector) extensionManager.getConfiguration("vm", testEvent()).getValue();
+
+    vmQueueManager.registerListenerQueue(config, TRANSIENT_QUEUE_NAME, mock(ComponentLocation.class));
     flowRunner("consume").run();
   }
 
