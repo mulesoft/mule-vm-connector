@@ -79,4 +79,8 @@ public class VMConnector implements Startable {
   public String getName() {
     return name;
   }
+
+  public List<QueueDefinition> getQueueDefinitions() {
+    return queueDefinitions;
+  }
 }
