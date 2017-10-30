@@ -73,6 +73,10 @@ public class VMConnector implements Startable {
 
   @Override
   public void start() throws MuleException {
+    if (queueDefinitions == null || queueDefinitions.isEmpty()) {
+      throw new IllegalArgumentException("No queues were defined for <vm:config> " + name);
+    }
+
     queueManager.createQueues(this, queueDefinitions);
   }
 
