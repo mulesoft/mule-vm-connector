@@ -251,6 +251,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
           LOGGER.warn("Failed to rollback transaction: " + e.getMessage(), e);
         }
       }
+      semaphore.release();
       connectionProvider.disconnect(connection);
     }
 
