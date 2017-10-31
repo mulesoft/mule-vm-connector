@@ -15,6 +15,7 @@ import org.mule.extensions.vm.internal.listener.VMListener;
 import org.mule.extensions.vm.internal.operations.VMOperations;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.lifecycle.Startable;
+import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.extension.api.annotation.Alias;
 import org.mule.runtime.extension.api.annotation.Expression;
 import org.mule.runtime.extension.api.annotation.Extension;
@@ -55,7 +56,7 @@ import javax.inject.Inject;
 @Operations(VMOperations.class)
 @ConnectionProviders(VMConnectionProvider.class)
 @ErrorTypes(VMError.class)
-public class VMConnector implements Startable {
+public class VMConnector implements Startable, Stoppable {
 
   @Inject
   private VMConnectorQueueManager queueManager;
@@ -78,6 +79,11 @@ public class VMConnector implements Startable {
     }
 
     queueManager.createQueues(this, queueDefinitions);
+  }
+
+  @Override
+  public void stop() throws MuleException {
+    queueManager.unregisterQueues(this);
   }
 
   public String getName() {

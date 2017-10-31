@@ -112,11 +112,11 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
       consumers.forEach(Consumer::stop);
     }
 
-    connectorQueueManager.unregisterListenerQueue(queueDescriptor.getQueueName());
-
     if (scheduler != null) {
-      scheduler.stop();
+      scheduler.shutdownNow();
     }
+
+    connectorQueueManager.unregisterListenerQueue(queueDescriptor.getQueueName());
   }
 
   @OnSuccess
