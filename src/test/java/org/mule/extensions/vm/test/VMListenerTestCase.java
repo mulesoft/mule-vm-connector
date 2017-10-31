@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -65,6 +66,7 @@ public class VMListenerTestCase extends VMTestCase {
   }
 
   @Test
+  @Ignore("MULE-13926")
   public void listenOneAtATime() throws Exception {
     final int messageCount = 3;
     Queue queue = getQueue("synchronousQueue");

@@ -53,8 +53,8 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
 
     @Override
     public CoreEvent process(CoreEvent event) throws MuleException {
-      CAPTURED.add(event);
       synchronized (CAPTURED) {
+        CAPTURED.add(event);
         CAPTURED.notifyAll();
       }
 
@@ -90,6 +90,11 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected StreamingManager streamingManager;
 
   @Override
+  protected void doSetUp() throws Exception {
+    CAPTURED.clear();
+  }
+
+  @Override
   protected void doTearDown() throws Exception {
     CAPTURED.clear();
   }
@@ -109,13 +114,15 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected CoreEvent getCapturedEvent(long timeout) {
     AtomicReference<CoreEvent> value = new AtomicReference<>();
     new PollingProber(timeout, 100).check(new JUnitLambdaProbe(() -> {
-      CoreEvent capturedEvent = CAPTURED.poll();
-      if (capturedEvent != null) {
-        value.set(capturedEvent);
-        return true;
-      }
+      synchronized (CAPTURED) {
+        CoreEvent capturedEvent = CAPTURED.poll();
+        if (capturedEvent != null) {
+          value.set(capturedEvent);
+          return true;
+        }
 
-      return false;
+        return false;
+      }
     }));
 
     return value.get();
