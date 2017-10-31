@@ -9,18 +9,21 @@ package org.mule.extensions.vm.test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
+import static org.mule.runtime.api.value.ValueProviderService.VALUE_PROVIDER_SERVICE_KEY;
 import static org.mule.tck.junit4.matcher.ValueMatcher.valueWithId;
 import org.mule.runtime.api.component.location.Location;
 import org.mule.runtime.api.value.ValueProviderService;
 import org.mule.runtime.api.value.ValueResult;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.junit.Test;
 
 public class QueueNamesValueProviderTestCase extends VMTestCase {
 
   @Inject
+  @Named(VALUE_PROVIDER_SERVICE_KEY)
   private ValueProviderService service;
 
   @Override

@@ -89,6 +89,15 @@ public class VMConnectorQueueManager implements Initialisable, Stoppable {
   }
 
   /**
+   * Releases the tracking handle for the queues defined in the given {@code config}. The queues themselves will not be destroyed
+   * 
+   * @param config the config that owns configs
+   */
+  public void unregisterQueues(VMConnector config) {
+    definitionRepository.unregisterQueues(config);
+  }
+
+  /**
    * Validates that a queue of the given {@code queueName} was created through {@link #createQueues(VMConnector, Collection)}
    * and that it was actually defined on the give {@code config}
    *

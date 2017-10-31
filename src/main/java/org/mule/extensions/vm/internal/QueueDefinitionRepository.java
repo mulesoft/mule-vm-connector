@@ -43,7 +43,18 @@ public class QueueDefinitionRepository {
 
         findByName(queueName).ifPresent(previous -> {
           throw new IllegalArgumentException(format("<vm:config> '%s' is trying to define queue '%s' which is already defined "
-              + "by config '%s'", previous.getFirst().getName()));
+              + "by config '%s'", config.getName(), definition.getQueueName(), previous.getFirst().getName()));
+        });
+
+        queueManager.getQueueConfiguration(definition.getQueueName()).ifPresent(queueConfig -> {
+          if (queueConfig.isPersistent() != definition.getQueueType().isPersistent()) {
+            throw new IllegalArgumentException(format(
+                                                      "<vm:config> '%s' is trying to define %s queue '%s' which already exists is already configured in the Mule "
+                                                          + "runtime as %s.",
+                                                      config.getName(), definition.getQueueType().name(),
+                                                      definition.getQueueName(),
+                                                      queueConfig.isPersistent() ? "persistent" : "transient"));
+          }
         });
 
         QueueProfile profile = new QueueProfile(definition.getMaxOutstandingMessages(), definition.getQueueType().isPersistent());
@@ -53,6 +64,10 @@ public class QueueDefinitionRepository {
 
       configQueues.putAll(createdQueues);
     });
+  }
+
+  public void unregisterQueues(VMConnector config) {
+    lock.withWriteLock(() -> queues.remove(config));
   }
 
   public Optional<Pair<VMConnector, QueueDefinition>> findByName(String name) {
