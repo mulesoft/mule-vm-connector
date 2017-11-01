@@ -166,6 +166,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         .withMaxConcurrentTasks(numberOfConsumers)
         .withName("vm listener on flow " + location.getRootContainerName())
         .withPrefix("vm-listener-flow-" + location.getRootContainerName())
+        .withWaitAllowed(true)
         .withShutdownTimeout(queueDescriptor.getTimeout(),
                              queueDescriptor.getTimeoutUnit()));
   }
@@ -189,15 +190,14 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
       while (isAlive()) {
         SourceCallbackContext ctx = sourceCallback.createContext();
-        Serializable value;
         try {
           semaphore.acquire();
           final VMConnection connection = connect(ctx);
           final Queue queue = connection.getQueue(queueDescriptor.getQueueName());
-          value = queue.poll(timeout);
+          Serializable value = queue.poll(timeout);
 
           if (value == null) {
-            cancel(ctx.getConnection());
+            cancel(ctx);
             continue;
           }
 
@@ -224,16 +224,16 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
           if (isAlive()) {
             sourceCallback.handle(result, ctx);
           } else {
-            cancel(ctx.getConnection());
+            cancel(ctx);
           }
         } catch (InterruptedException e) {
           stop();
-          cancel(ctx.getConnection());
+          cancel(ctx);
           LOGGER.info("Consumer for <vm:listener> on flow '{}' was interrupted. No more consuming for thread '{}'",
                       location.getRootContainerName(),
                       currentThread().getName());
         } catch (Exception e) {
-          cancel(ctx.getConnection());
+          cancel(ctx);
           if (LOGGER.isErrorEnabled()) {
             LOGGER.error(format("Consumer for <vm:listener> on flow '%s' found unexpected exception. Consuming will continue '",
                                 location.getRootContainerName()),
@@ -243,16 +243,16 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
       }
     }
 
-    private void cancel(VMConnection connection) {
+    private void cancel(SourceCallbackContext ctx) {
       try {
-        connection.rollback();
+        ctx.getTransactionHandle().rollback();
       } catch (TransactionException e) {
         if (LOGGER.isWarnEnabled()) {
           LOGGER.warn("Failed to rollback transaction: " + e.getMessage(), e);
         }
       }
       semaphore.release();
-      connectionProvider.disconnect(connection);
+      connectionProvider.disconnect(ctx.getConnection());
     }
 
     private VMConnection connect(SourceCallbackContext ctx) throws ConnectionException, TransactionException {
