@@ -24,10 +24,14 @@
     </flow>
 
     <flow name="synchronousListener" maxConcurrency="1">
-        <vm:listener queueName="synchronousQueue" numberOfConsumers="1" config-ref="sync"/>
+        <vm:listener queueName="synchronousQueue" numberOfConsumers="1" config-ref="sync" transactionalAction="ALWAYS_BEGIN"/>
         <test:processor class="org.mule.extensions.vm.test.VMTestCase$Sleep" />
         <set-payload value="#[now()]" />
         <flow-ref name="capture"/>
+    </flow>
+
+    <flow name="publishToSyncQueue">
+        <vm:publish queueName="synchronousQueue" config-ref="sync" transactionalAction="JOIN_IF_POSSIBLE" />
     </flow>
 
     <sub-flow name="capture">

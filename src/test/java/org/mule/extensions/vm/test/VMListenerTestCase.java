@@ -33,7 +33,6 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -66,29 +65,18 @@ public class VMListenerTestCase extends VMTestCase {
   }
 
   @Test
-  @Ignore("MULE-13926")
   public void listenOneAtATime() throws Exception {
     final int messageCount = 3;
-    Queue queue = getQueue("synchronousQueue");
 
     Serializable sentValue = new Apple();
-
-    Runnable emmiter = () -> {
-      for (int i = 0; i < messageCount; i++) {
-        try {
-          queue.offer(sentValue, TIMEOUT);
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
-      }
-    };
+    for (int i = 0; i < messageCount; i++) {
+      flowRunner("publishToSyncQueue").withPayload(sentValue).run();
+    }
 
     Long priorMessageTime = null;
-    new Thread(emmiter).start();
 
     for (int i = 0; i < messageCount; i++) {
-      CoreEvent event = getCapturedEvent(50000);
-      ZonedDateTime messageTimestamp = (ZonedDateTime) event.getMessage().getPayload().getValue();
+      ZonedDateTime messageTimestamp = (ZonedDateTime) getCapturedEvent(15000).getMessage().getPayload().getValue();
       final long timestamp = messageTimestamp.toInstant().toEpochMilli();
       if (priorMessageTime != null) {
         long diff = timestamp - priorMessageTime;
