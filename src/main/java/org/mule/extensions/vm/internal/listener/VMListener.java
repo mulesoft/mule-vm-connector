@@ -8,7 +8,6 @@ package org.mule.extensions.vm.internal.listener;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
@@ -157,7 +156,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
     for (int i = 0; i < numberOfConsumers; i++) {
       final Consumer consumer = new Consumer(sourceCallback);
       consumers.add(consumer);
-      scheduler.schedule(consumer::start, 0, MILLISECONDS);
+      scheduler.submit(consumer::start);
     }
   }
 
