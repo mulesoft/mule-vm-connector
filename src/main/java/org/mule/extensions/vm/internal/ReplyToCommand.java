@@ -19,6 +19,8 @@ import java.io.Serializable;
  */
 public class ReplyToCommand implements Serializable {
 
+  private static final long serialVersionUID = -6702564673951123007L;
+
   private final TypedValue<Serializable> value;
   private final String replyToQueueName;
 
