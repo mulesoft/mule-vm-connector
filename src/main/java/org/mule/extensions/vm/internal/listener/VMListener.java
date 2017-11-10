@@ -9,6 +9,7 @@ package org.mule.extensions.vm.internal.listener;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static org.slf4j.LoggerFactory.getLogger;
+
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
@@ -42,13 +43,13 @@ import org.mule.runtime.extension.api.runtime.source.Source;
 import org.mule.runtime.extension.api.runtime.source.SourceCallback;
 import org.mule.runtime.extension.api.runtime.source.SourceCallbackContext;
 
+import javax.inject.Inject;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.inject.Inject;
 
 import org.slf4j.Logger;
 

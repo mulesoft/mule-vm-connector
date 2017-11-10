@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+
+      http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+
+    <vm:config name="vm">
+        <vm:queues>
+            <vm:queue queueName="transientQueue" queueType="TRANSIENT" />
+            <vm:queue queueName="persistentQueue" queueType="PERSISTENT" />
+        </vm:queues>
+    </vm:config>
+
+    <flow name="listener">
+        <vm:listener config-ref="vm" />
+    </flow>
+
+</mule>

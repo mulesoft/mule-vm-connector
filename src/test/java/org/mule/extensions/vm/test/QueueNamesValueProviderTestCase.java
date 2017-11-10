@@ -28,7 +28,7 @@ public class QueueNamesValueProviderTestCase extends VMTestCase {
 
   @Override
   protected String[] getConfigFiles() {
-    return new String[] {"vm-listener-config.xml", "vm-publish-config.xml", "vm-configs.xml"};
+    return new String[] {"vm-listener-value-providers-config.xml"};
   }
 
   @Override
@@ -44,7 +44,7 @@ public class QueueNamesValueProviderTestCase extends VMTestCase {
   @Test
   public void getQueueNames() {
     ValueResult values =
-        service.getValues(Location.builder().globalName("publishToTransient").addProcessorsPart().addIndexPart(0).build(),
+        service.getValues(Location.builder().globalName("listener").addSourcePart().build(),
                           "queueName");
     assertThat(values.isSuccess(), is(true));
     assertThat(values.getValues(), hasItems(valueWithId("transientQueue"), valueWithId("persistentQueue")));
