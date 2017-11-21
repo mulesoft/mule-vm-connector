@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
  */
 public class VMMessageAttributes implements Serializable {
 
+  private static final long serialVersionUID = 3923721884012142263L;
+
   /**
    * The name of the queue the content came from.
    */
