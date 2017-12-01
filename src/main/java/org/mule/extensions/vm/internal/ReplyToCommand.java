@@ -17,11 +17,10 @@ import java.io.Serializable;
  *
  * @since 1.0
  */
-public class ReplyToCommand implements Serializable {
+public class ReplyToCommand extends VMMessage {
 
   private static final long serialVersionUID = -6702564673951123007L;
 
-  private final TypedValue<Serializable> value;
   private final String replyToQueueName;
 
   /**
@@ -30,13 +29,9 @@ public class ReplyToCommand implements Serializable {
    * @param value            the published content
    * @param replyToQueueName the name of the reply-To queue
    */
-  public ReplyToCommand(TypedValue<Serializable> value, String replyToQueueName) {
-    this.value = value;
+  public ReplyToCommand(TypedValue<Serializable> value, String replyToQueueName, String correlationInfo) {
+    super(value, correlationInfo);
     this.replyToQueueName = replyToQueueName;
-  }
-
-  public TypedValue<Serializable> getValue() {
-    return value;
   }
 
   public String getReplyToQueueName() {

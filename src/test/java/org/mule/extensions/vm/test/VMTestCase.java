@@ -47,6 +47,7 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected static final String PERSISTENT_QUEUE_NAME = "persistentQueue";
   protected static final java.util.Queue<CoreEvent> CAPTURED = new ConcurrentLinkedDeque<>();
   protected static final String VM_ERROR_NAMESPACE = "VM";
+  protected static final String MY_CORRELATION_ID = "myCorrelationId";
   protected static final long TIMEOUT = 5000;
 
   public static class EventCaptor implements Processor {

@@ -9,9 +9,9 @@ package org.mule.extensions.vm.test;
 import static java.time.LocalDateTime.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
-import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.streaming.CursorProvider;
@@ -29,10 +29,12 @@ import org.junit.Test;
 
 public class VMPublishTestCase extends VMTestCase {
 
+  private static final String PUBLISH_TO_TRANSIENT_FLOW_NAME = "publishToTransient";
+
   public static class DelayProcessor implements Processor {
 
     @Override
-    public CoreEvent process(CoreEvent event) throws MuleException {
+    public CoreEvent process(CoreEvent event) {
       try {
         Thread.sleep(300);
       } catch (InterruptedException e) {
@@ -49,7 +51,7 @@ public class VMPublishTestCase extends VMTestCase {
 
   @Test
   public void publishToTransient() throws Exception {
-    assertPublish("publishToTransient", TRANSIENT_QUEUE_NAME);
+    assertPublish(PUBLISH_TO_TRANSIENT_FLOW_NAME, TRANSIENT_QUEUE_NAME);
   }
 
   @Test
@@ -77,6 +79,24 @@ public class VMPublishTestCase extends VMTestCase {
     assertPublishStream(provider);
   }
 
+  @Test
+  public void publishWithDefaultCorrelationId() throws Exception {
+    CoreEvent event = assertPublish(PUBLISH_TO_TRANSIENT_FLOW_NAME, TRANSIENT_QUEUE_NAME, MY_CORRELATION_ID);
+    assertThat(event.getCorrelationId(), is(MY_CORRELATION_ID));
+  }
+
+  @Test
+  public void publishWithCustomCorrelationId() throws Exception {
+    CoreEvent event = assertPublish("publishWithCustomCorrelationId", TRANSIENT_QUEUE_NAME);
+    assertThat(event.getCorrelationId(), is(MY_CORRELATION_ID));
+  }
+
+  @Test
+  public void neverSendCorrelationId() throws Exception {
+    CoreEvent event = assertPublish("neverSendCorrelationId", TRANSIENT_QUEUE_NAME);
+    assertThat(event.getCorrelationId(), is(not(MY_CORRELATION_ID)));
+  }
+
   private void assertPublishStream(Object content) throws Exception {
     TypedValue<?> value = new TypedValue<>(content, JSON_STRING);
     LocalDateTime now = now();
@@ -94,12 +114,17 @@ public class VMPublishTestCase extends VMTestCase {
     assertAttributes(message.getAttributes(), PERSISTENT_QUEUE_NAME, now);
   }
 
-  private void assertPublish(String flowName, String queueName) throws Exception {
+  private CoreEvent assertPublish(String flowName, String queueName) throws Exception {
+    return assertPublish(flowName, queueName, null);
+  }
+
+  private CoreEvent assertPublish(String flowName, String queueName, String correlationId) throws Exception {
     TypedValue<String> value = new TypedValue<>("Hello", JSON_STRING);
     LocalDateTime now = now();
     flowRunner(flowName)
         .withPayload(value.getValue())
         .withMediaType(value.getDataType().getMediaType())
+        .withSourceCorrelationId(correlationId)
         .run();
 
     CoreEvent event = getCapturedEvent();
@@ -109,5 +134,7 @@ public class VMPublishTestCase extends VMTestCase {
     assertThat(payload.getValue(), is(equalTo(value.getValue())));
     assertThat(payload.getDataType(), equalTo(value.getDataType()));
     assertAttributes(message.getAttributes(), queueName, now);
+
+    return event;
   }
 }

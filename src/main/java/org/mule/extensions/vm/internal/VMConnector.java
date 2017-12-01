@@ -9,6 +9,7 @@ package org.mule.extensions.vm.internal;
 
 
 import static org.mule.runtime.api.meta.ExpressionSupport.NOT_SUPPORTED;
+import static org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy.AUTO;
 import org.mule.extensions.vm.api.VMError;
 import org.mule.extensions.vm.internal.connection.VMConnectionProvider;
 import org.mule.extensions.vm.internal.listener.VMListener;
@@ -24,8 +25,10 @@ import org.mule.runtime.extension.api.annotation.Sources;
 import org.mule.runtime.extension.api.annotation.connectivity.ConnectionProviders;
 import org.mule.runtime.extension.api.annotation.dsl.xml.Xml;
 import org.mule.runtime.extension.api.annotation.error.ErrorTypes;
+import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.RefName;
+import org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy;
 
 import java.util.List;
 
@@ -71,6 +74,14 @@ public class VMConnector implements Startable, Stoppable {
   @Expression(NOT_SUPPORTED)
   @Alias("queues")
   private List<QueueDefinition> queueDefinitions;
+
+  /**
+   * Whether to specify a correlationId when publishing messages. This applies both for custom correlation ids specifies at the
+   * operation level and for default correlation Ids taken from the current event
+   */
+  @Parameter
+  @Optional(defaultValue = "AUTO")
+  private OutboundCorrelationStrategy sendCorrelationId = AUTO;
 
   @Override
   public void start() throws MuleException {

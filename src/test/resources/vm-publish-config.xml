@@ -17,4 +17,12 @@
         </vm:publish>
     </flow>
 
+    <flow name="publishWithCustomCorrelationId">
+        <vm:publish queueName="transientQueue" correlationId="myCorrelationId" config-ref="vm" />
+    </flow>
+
+    <flow name="neverSendCorrelationId">
+        <vm:publish queueName="transientQueue" sendCorrelationId="NEVER" correlationId="myCorrelationId" config-ref="vm" />
+    </flow>
+
 </mule>

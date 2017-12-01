@@ -16,6 +16,7 @@ import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
+import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.exception.MuleException;
@@ -28,11 +29,14 @@ import org.mule.runtime.api.scheduler.SchedulerService;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.error.Throws;
 import org.mule.runtime.extension.api.annotation.param.Config;
+import org.mule.runtime.extension.api.annotation.param.ConfigOverride;
 import org.mule.runtime.extension.api.annotation.param.Connection;
 import org.mule.runtime.extension.api.annotation.param.Content;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
 import org.mule.runtime.extension.api.exception.ModuleException;
 import org.mule.runtime.extension.api.runtime.operation.Result;
+import org.mule.runtime.extension.api.runtime.parameter.CorrelationInfo;
+import org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy;
 
 import java.io.Serializable;
 import java.util.Optional;
@@ -71,18 +75,28 @@ public class VMOperations implements Startable, Stoppable {
   /**
    * Publishes the given {@code content} into the queue of the given {@code queueName}.
    *
-   * @param content         the content to be published
-   * @param queueDescriptor the queue configuration
-   * @param connection      the acting connection
+   * @param content           the content to be published
+   * @param queueDescriptor   the queue configuration
+   * @param sendCorrelationId options on whether to include an outbound correlation id or not
+   * @param correlationId     allows to set a custom correlation id
+   * @param config            the connector's config
+   * @param connection        the acting connection
+   * @param correlationInfo   the current message's correlation info
    */
   @Throws(PublishErrorTypeProvider.class)
   public void publish(@Content TypedValue<Serializable> content,
                       @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
+                      @ConfigOverride OutboundCorrelationStrategy sendCorrelationId,
+                      @org.mule.runtime.extension.api.annotation.param.Optional String correlationId,
                       @Config VMConnector config,
-                      @Connection VMConnection connection) {
+                      @Connection VMConnection connection,
+                      CorrelationInfo correlationInfo) {
 
     Queue queue = getQueue(queueDescriptor, config, connection);
-    doPublish(content, queueDescriptor, queue);
+    VMMessage message =
+        new VMMessage(content, sendCorrelationId.getOutboundCorrelationId(correlationInfo, correlationId).orElse(null));
+
+    doPublish(message, queueDescriptor, queue);
   }
 
   /**
@@ -123,22 +137,32 @@ public class VMOperations implements Startable, Stoppable {
    * The queue on which the content is published has to be one for which a {@code <vm:listener>} <b>doesn't </b> exists.
    * Consuming from queues on which a {@code <vm:listener>} exists is not allowed.
    *
-   * @param content         the content to be published
-   * @param queueDescriptor the queue configuration
-   * @param connection      the acting connection
+   * @param content           the content to be published
+   * @param queueDescriptor   the queue configuration
+   * @param sendCorrelationId options on whether to include an outbound correlation id or not
+   * @param correlationId     allows to set a custom correlation id
+   * @param config            the connector's config
+   * @param connection        the acting connection
+   * @param correlationInfo   the current message's correlation info
    * @return The response generated from the invoked listener's flow
    */
   @Throws(PublishConsumeErrorTypeProvider.class)
   public Result<Serializable, VMMessageAttributes> publishConsume(@Content TypedValue<Serializable> content,
                                                                   @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
+                                                                  @ConfigOverride OutboundCorrelationStrategy sendCorrelationId,
+                                                                  @org.mule.runtime.extension.api.annotation.param.Optional String correlationId,
                                                                   @Config VMConnector config,
-                                                                  @Connection VMConnection connection) {
+                                                                  @Connection VMConnection connection,
+                                                                  CorrelationInfo correlationInfo) {
 
     final Queue queue = getQueue(queueDescriptor, config, connection);
     final Queue replyToQueue = queueManager.createReplyToQueue(queue, connection);
 
+    VMMessage message = new ReplyToCommand(content, replyToQueue.getName(),
+                                           sendCorrelationId.getOutboundCorrelationId(correlationInfo, correlationId)
+                                               .orElse(null));
     try {
-      doPublish(new ReplyToCommand(content, replyToQueue.getName()), queueDescriptor, queue);
+      doPublish(message, queueDescriptor, queue);
       return doConsume(replyToQueue, queueDescriptor)
           .map(value -> asConsumeResponse(value, queueDescriptor))
           .orElseThrow(() -> new ModuleException(format(
@@ -162,7 +186,13 @@ public class VMOperations implements Startable, Stoppable {
   private Result<Serializable, VMMessageAttributes> asConsumeResponse(Serializable value, QueueDescriptor queueDescriptor) {
 
     Result.Builder<Serializable, VMMessageAttributes> resultBuilder = Result.builder();
-    resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName()));
+    String correlationId = null;
+
+    if (value instanceof VMMessage) {
+      VMMessage message = (VMMessage) value;
+      value = message.getValue();
+      correlationId = message.getCorrelationId().orElse(null);
+    }
 
     if (value instanceof TypedValue) {
       TypedValue<Serializable> typedValue = (TypedValue) value;
@@ -172,6 +202,7 @@ public class VMOperations implements Startable, Stoppable {
       resultBuilder.output(value);
     }
 
+    resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName(), correlationId));
     return resultBuilder.build();
   }
 

@@ -26,16 +26,32 @@ public class VMMessageAttributes implements Serializable {
   private final String queueName;
 
   /**
+   * The correlation id for the message
+   */
+  private final String correlationId;
+
+  /**
    * The time at which the content was retrieved.
    */
   private final LocalDateTime timestamp = now();
 
-  public VMMessageAttributes(String queueName) {
+  /**
+   * Creates a new instance
+   *
+   * @param queueName     the name of the queue from which the message was taken
+   * @param correlationId the message correlation id
+   */
+  public VMMessageAttributes(String queueName, String correlationId) {
     this.queueName = queueName;
+    this.correlationId = correlationId;
   }
 
   public String getQueueName() {
     return queueName;
+  }
+
+  public String getCorrelationId() {
+    return correlationId;
   }
 
   public LocalDateTime getTimestamp() {

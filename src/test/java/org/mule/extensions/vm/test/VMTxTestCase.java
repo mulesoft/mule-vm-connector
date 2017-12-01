@@ -13,6 +13,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
+import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.construct.Flow;
@@ -43,7 +44,7 @@ public class VMTxTestCase extends VMTestCase {
     simulateListener();
 
     publish(false);
-    TypedValue<String> typedValue = (TypedValue<String>) getTransientQueue().poll(1000);
+    TypedValue typedValue = ((VMMessage) getTransientQueue().poll(1000)).getValue();
     assertThat(typedValue.getValue(), equalTo(STRING_PAYLOAD));
   }
 
