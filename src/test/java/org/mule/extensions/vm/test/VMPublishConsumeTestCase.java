@@ -7,12 +7,13 @@
 package org.mule.extensions.vm.test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.MediaType.APPLICATION_JSON;
 import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
-import org.mule.runtime.api.exception.MuleException;
+import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.processor.Processor;
@@ -30,7 +31,7 @@ public class VMPublishConsumeTestCase extends VMTestCase {
   public static class FailureProcessor implements Processor {
 
     @Override
-    public CoreEvent process(CoreEvent event) throws MuleException {
+    public CoreEvent process(CoreEvent event) {
       throw new UnsupportedOperationException();
     }
   }
@@ -42,13 +43,32 @@ public class VMPublishConsumeTestCase extends VMTestCase {
 
   @Test
   public void publishConsume() throws Exception {
-    TypedValue<byte[]> payload = flowRunner("publishConsume")
-        .withPayload(JSON_PAYLOAD)
-        .withMediaType(APPLICATION_JSON)
-        .run().getMessage().getPayload();
+    assertPublishConsume("publishConsume");
+  }
 
-    assertThat(new String(payload.getValue()), is(asJson(STRING_PAYLOAD.toLowerCase())));
-    assertThat(payload.getDataType().getMediaType().matches(JSON_STRING.getMediaType()), is(true));
+  @Test
+  public void publishConsumerWithDefaultCorrelationId() throws Exception {
+    CoreEvent event = assertPublishConsume("publishConsume", MY_CORRELATION_ID);
+    assertAttributesCorrelationId(event, MY_CORRELATION_ID);
+  }
+
+  private void assertAttributesCorrelationId(CoreEvent event, String correlationId) {
+    VMMessageAttributes attributes = (VMMessageAttributes) event.getMessage().getAttributes().getValue();
+    assertThat(attributes.getCorrelationId(), is(correlationId));
+  }
+
+  @Test
+  public void publishConsumeWithCustomCorrelationId() throws Exception {
+    CoreEvent event = assertPublishConsume("publishConsumeWithCustomCorrelationId");
+    assertAttributesCorrelationId(event, MY_CORRELATION_ID);
+    assertThat(event.getCorrelationId(), is(not(MY_CORRELATION_ID)));
+  }
+
+  @Test
+  public void neverSendCorrelationId() throws Exception {
+    CoreEvent event = assertPublishConsume("neverSendCorrelationId", MY_CORRELATION_ID);
+    VMMessageAttributes attributes = (VMMessageAttributes) event.getMessage().getAttributes().getValue();
+    assertThat(attributes.getCorrelationId(), is(not(MY_CORRELATION_ID)));
   }
 
   @Test
@@ -86,14 +106,23 @@ public class VMPublishConsumeTestCase extends VMTestCase {
     runAndExpect("failingPublishConsume", errorType(VM_ERROR_NAMESPACE, QUEUE_TIMEOUT.name()));
   }
 
-  private void assertPublishConsume(String flowName) throws Exception {
-    TypedValue<byte[]> payload = flowRunner(flowName)
+  private CoreEvent assertPublishConsume(String flowName) throws Exception {
+    return assertPublishConsume(flowName, null);
+  }
+
+  private CoreEvent assertPublishConsume(String flowName, String correlationId) throws Exception {
+    CoreEvent event = flowRunner(flowName)
         .withPayload(new ByteArrayInputStream(JSON_PAYLOAD.getBytes()))
         .withMediaType(APPLICATION_JSON)
-        .run().getMessage().getPayload();
+        .withSourceCorrelationId(correlationId)
+        .run();
+
+    TypedValue<byte[]> payload = event.getMessage().getPayload();
 
     assertThat(new String(payload.getValue()), is(asJson(STRING_PAYLOAD.toLowerCase())));
     assertThat(payload.getDataType().getMediaType().matches(JSON_STRING.getMediaType()), is(true));
+
+    return event;
   }
 
   private String asJson(String value) {

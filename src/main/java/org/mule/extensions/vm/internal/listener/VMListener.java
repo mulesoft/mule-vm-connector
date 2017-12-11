@@ -9,8 +9,8 @@ package org.mule.extensions.vm.internal.listener;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static org.slf4j.LoggerFactory.getLogger;
-
 import org.mule.extensions.vm.api.VMMessageAttributes;
+import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnector;
@@ -39,17 +39,18 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
 import org.mule.runtime.extension.api.annotation.source.EmitsResponse;
 import org.mule.runtime.extension.api.runtime.operation.Result;
+import org.mule.runtime.extension.api.runtime.parameter.CorrelationInfo;
 import org.mule.runtime.extension.api.runtime.source.Source;
 import org.mule.runtime.extension.api.runtime.source.SourceCallback;
 import org.mule.runtime.extension.api.runtime.source.SourceCallbackContext;
-
-import javax.inject.Inject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.inject.Inject;
 
 import org.slf4j.Logger;
 
@@ -121,6 +122,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   @OnSuccess
   public void onSuccess(@ParameterGroup(name = "Response", showInDsl = true) VMResponseBuilder messageBuilder,
+                        CorrelationInfo correlationInfo,
                         SourceCallbackContext ctx) {
 
     ctx.<String>getVariable(REPLY_TO_QUEUE_NAME).ifPresent(replyTo -> {
@@ -134,8 +136,9 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
       }
 
       if (queue != null) {
+        VMMessage message = new VMMessage(messageBuilder.getContent(), correlationInfo.getCorrelationId());
         try {
-          queue.offer(messageBuilder.getContent(), queueDescriptor.getQueueTimeoutInMillis());
+          queue.offer(message, queueDescriptor.getQueueTimeoutInMillis());
         } catch (Exception e) {
           LOGGER.warn(format("Found exception trying to send response to replyTo queue '%s'", replyTo), e);
         }
@@ -201,14 +204,19 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
             continue;
           }
 
-          Result.Builder resultBuilder = Result.<Serializable, VMMessageAttributes>builder()
-              .attributes(new VMMessageAttributes(queueDescriptor.getQueueName()));
+          String correlationId = null;
+          Result.Builder resultBuilder = Result.<Serializable, VMMessageAttributes>builder();
 
-          if (value instanceof ReplyToCommand) {
-            ReplyToCommand replyTo = (ReplyToCommand) value;
-            ctx.addVariable(REPLY_TO_QUEUE_NAME, replyTo.getReplyToQueueName());
+          if (value instanceof VMMessage) {
+            VMMessage command = (VMMessage) value;
+            correlationId = command.getCorrelationId().orElse(null);
 
-            value = replyTo.getValue();
+            if (value instanceof ReplyToCommand) {
+              ReplyToCommand replyTo = (ReplyToCommand) value;
+              ctx.addVariable(REPLY_TO_QUEUE_NAME, replyTo.getReplyToQueueName());
+            }
+
+            value = command.getValue();
           }
 
           if (value instanceof TypedValue) {
@@ -219,7 +227,10 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
             resultBuilder.output(value);
           }
 
+          resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName(), correlationId));
           Result<Serializable, VMMessageAttributes> result = resultBuilder.build();
+
+          ctx.setCorrelationId(correlationId);
 
           if (isAlive()) {
             sourceCallback.handle(result, ctx);

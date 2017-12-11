@@ -66,6 +66,14 @@
         <vm:publish-consume queueName="queue" config-ref="vm"/>
     </flow>
 
+    <flow name="publishConsumeWithCustomCorrelationId">
+        <vm:publish-consume queueName="queue" correlationId="myCorrelationId" config-ref="vm"/>
+    </flow>
+
+    <flow name="neverSendCorrelationId">
+        <vm:publish-consume queueName="queue" sendCorrelationId="NEVER" correlationId="myCorrelationId" config-ref="vm"/>
+    </flow>
+
     <flow name="onErrorContinue">
         <vm:publish-consume queueName="onErrorContinue" config-ref="vm"/>
     </flow>
