@@ -9,12 +9,13 @@ package org.mule.extensions.vm.internal.listener;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static org.slf4j.LoggerFactory.getLogger;
+
 import org.mule.extensions.vm.api.VMMessageAttributes;
-import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
+import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.component.location.ConfigurationComponentLocator;
@@ -44,6 +45,8 @@ import org.mule.runtime.extension.api.runtime.source.Source;
 import org.mule.runtime.extension.api.runtime.source.SourceCallback;
 import org.mule.runtime.extension.api.runtime.source.SourceCallbackContext;
 
+import org.slf4j.Logger;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,8 +54,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
-
-import org.slf4j.Logger;
 
 /**
  * A source which creates and listens on a VM queues.
@@ -91,6 +92,9 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   @Inject
   private SchedulerService schedulerService;
+
+  @Inject
+  private SchedulerConfig schedulerConfig;
 
   @Inject
   private ConfigurationComponentLocator componentLocator;
@@ -165,10 +169,9 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   }
 
   private void createScheduler() {
-    scheduler = schedulerService.customScheduler(SchedulerConfig.config()
+    scheduler = schedulerService.customScheduler(schedulerConfig
         .withMaxConcurrentTasks(numberOfConsumers)
-        .withName("vm listener on flow " + location.getRootContainerName())
-        .withPrefix("vm-listener-flow-" + location.getRootContainerName())
+        .withName("vm-listener-flow " + location.getRootContainerName())
         .withWaitAllowed(true)
         .withShutdownTimeout(queueDescriptor.getTimeout(),
                              queueDescriptor.getTimeoutUnit()));
