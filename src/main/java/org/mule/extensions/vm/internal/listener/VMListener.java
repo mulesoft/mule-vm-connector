@@ -8,8 +8,8 @@ package org.mule.extensions.vm.internal.listener;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
+import static org.mule.runtime.extension.api.runtime.source.BackPressureMode.WAIT;
 import static org.slf4j.LoggerFactory.getLogger;
-
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
@@ -38,14 +38,13 @@ import org.mule.runtime.extension.api.annotation.param.Connection;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
+import org.mule.runtime.extension.api.annotation.source.BackPressure;
 import org.mule.runtime.extension.api.annotation.source.EmitsResponse;
 import org.mule.runtime.extension.api.runtime.operation.Result;
 import org.mule.runtime.extension.api.runtime.parameter.CorrelationInfo;
 import org.mule.runtime.extension.api.runtime.source.Source;
 import org.mule.runtime.extension.api.runtime.source.SourceCallback;
 import org.mule.runtime.extension.api.runtime.source.SourceCallbackContext;
-
-import org.slf4j.Logger;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -54,6 +53,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
+
+import org.slf4j.Logger;
 
 /**
  * A source which creates and listens on a VM queues.
@@ -65,6 +66,7 @@ import javax.inject.Inject;
  */
 @Alias("listener")
 @EmitsResponse
+@BackPressure(defaultMode = WAIT, supportedModes = WAIT)
 public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   private static final Logger LOGGER = getLogger(VMListener.class);
