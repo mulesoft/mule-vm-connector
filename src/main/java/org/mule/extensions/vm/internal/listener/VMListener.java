@@ -8,7 +8,6 @@ package org.mule.extensions.vm.internal.listener;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
-import static org.mule.runtime.extension.api.runtime.source.BackPressureMode.WAIT;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
@@ -38,7 +37,6 @@ import org.mule.runtime.extension.api.annotation.param.Connection;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
-import org.mule.runtime.extension.api.annotation.source.BackPressure;
 import org.mule.runtime.extension.api.annotation.source.EmitsResponse;
 import org.mule.runtime.extension.api.runtime.operation.Result;
 import org.mule.runtime.extension.api.runtime.parameter.CorrelationInfo;
@@ -66,7 +64,6 @@ import org.slf4j.Logger;
  */
 @Alias("listener")
 @EmitsResponse
-@BackPressure(defaultMode = WAIT, supportedModes = WAIT)
 public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   private static final Logger LOGGER = getLogger(VMListener.class);
