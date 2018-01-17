@@ -8,10 +8,12 @@ package org.mule.extensions.vm.internal;
 
 import static java.lang.String.format;
 import static org.mule.runtime.core.api.util.concurrent.FunctionalReadWriteLock.readWriteLock;
+
+import org.mule.extensions.vm.api.QueueDefinition;
 import org.mule.runtime.api.util.Pair;
 import org.mule.runtime.core.api.config.QueueProfile;
-import org.mule.runtime.core.api.util.queue.QueueManager;
 import org.mule.runtime.core.api.util.concurrent.FunctionalReadWriteLock;
+import org.mule.runtime.core.api.util.queue.QueueManager;
 
 import java.util.Collection;
 import java.util.HashMap;

@@ -12,8 +12,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mule.extensions.vm.api.QueueType.PERSISTENT;
 import static org.mule.extensions.vm.api.QueueType.TRANSIENT;
+
+import org.mule.extensions.vm.api.QueueDefinition;
 import org.mule.extensions.vm.api.QueueType;
-import org.mule.extensions.vm.internal.QueueDefinition;
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.runtime.api.lifecycle.InitialisationException;
