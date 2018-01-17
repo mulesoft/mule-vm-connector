@@ -10,6 +10,8 @@ package org.mule.extensions.vm.internal;
 
 import static org.mule.runtime.api.meta.ExpressionSupport.NOT_SUPPORTED;
 import static org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy.AUTO;
+
+import org.mule.extensions.vm.api.QueueDefinition;
 import org.mule.extensions.vm.api.VMError;
 import org.mule.extensions.vm.internal.connection.VMConnectionProvider;
 import org.mule.extensions.vm.internal.listener.VMListener;
@@ -30,9 +32,9 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.RefName;
 import org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy;
 
-import java.util.List;
-
 import javax.inject.Inject;
+
+import java.util.List;
 
 /**
  * The VM Connector is used for intra/inter app communication. The communication is done through asynchronous queues, which can

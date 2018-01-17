@@ -8,6 +8,8 @@ package org.mule.extensions.vm.internal;
 
 import static java.util.stream.Collectors.toList;
 import static org.mule.runtime.extension.api.values.ValueBuilder.getValuesFor;
+
+import org.mule.extensions.vm.api.QueueDefinition;
 import org.mule.runtime.api.value.Value;
 import org.mule.runtime.extension.api.annotation.param.Config;
 import org.mule.runtime.extension.api.values.ValueProvider;
