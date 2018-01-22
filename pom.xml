@@ -23,7 +23,7 @@
 
     <properties>
         <formatterConfigPath>formatter.xml</formatterConfigPath>
-        <muleTestsComponentPlugin>4.1.0-SNAPSHOT</muleTestsComponentPlugin>
+        <muleTestsComponentPlugin>4.1.0</muleTestsComponentPlugin>
     </properties>
 
     <distributionManagement>
