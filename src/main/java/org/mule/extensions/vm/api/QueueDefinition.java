@@ -4,7 +4,7 @@
  * license, a copy of which has been included with this distribution in the
  * LICENSE.txt file.
  */
-package org.mule.extensions.vm.internal;
+package org.mule.extensions.vm.api;
 
 import static org.mule.extensions.vm.api.QueueType.TRANSIENT;
 import static org.mule.runtime.api.meta.ExpressionSupport.NOT_SUPPORTED;
