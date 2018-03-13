@@ -9,6 +9,7 @@ package org.mule.extensions.vm.internal;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
+import org.mule.runtime.extension.api.annotation.param.display.Summary;
 import org.mule.runtime.extension.api.annotation.values.OfValues;
 
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,7 @@ public class QueueDescriptor {
    */
   @Parameter
   @OfValues(value = QueueNamesValueProvider.class, open = false)
+  @Summary("The name of the queue")
   private String queueName;
 
   /**
@@ -33,6 +35,7 @@ public class QueueDescriptor {
    */
   @Parameter
   @Optional(defaultValue = "5")
+  @Summary("How long to wait on the queue before failing")
   private int timeout = 5;
 
   /**

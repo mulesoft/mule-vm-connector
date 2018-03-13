@@ -7,6 +7,8 @@
 package org.mule.extensions.vm.api;
 
 import static java.time.LocalDateTime.now;
+import org.mule.runtime.extension.api.annotation.param.Optional;
+import org.mule.runtime.extension.api.annotation.param.Parameter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -23,16 +25,20 @@ public class VMMessageAttributes implements Serializable {
   /**
    * The name of the queue the content came from.
    */
+  @Parameter
   private final String queueName;
 
   /**
-   * The correlation id for the message
+   * The correlation id for the message or null if such id does not exist
    */
+  @Parameter
+  @Optional
   private final String correlationId;
 
   /**
    * The time at which the content was retrieved.
    */
+  @Parameter
   private final LocalDateTime timestamp = now();
 
   /**
