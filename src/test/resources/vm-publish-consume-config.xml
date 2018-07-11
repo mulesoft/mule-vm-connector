@@ -59,7 +59,7 @@
 
     <flow name="failListener">
         <vm:listener queueName="failQueue" config-ref="vm" />
-        <test:processor class="org.mule.extensions.vm.test.VMPublishConsumeTestCase$FailureProcessor" />
+        <raise-error type="ROUTING" />
     </flow>
 
     <flow name="publishConsume">

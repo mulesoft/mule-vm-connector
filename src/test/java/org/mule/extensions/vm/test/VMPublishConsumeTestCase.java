@@ -9,14 +9,12 @@ package org.mule.extensions.vm.test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
-import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.MediaType.APPLICATION_JSON;
 import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
-import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.streaming.bytes.CursorStreamProviderFactory;
 import org.mule.runtime.core.api.streaming.bytes.InMemoryCursorStreamConfig;
 import org.mule.runtime.core.api.streaming.bytes.factory.InMemoryCursorStreamProviderFactory;
@@ -27,14 +25,6 @@ import java.io.ByteArrayInputStream;
 import org.junit.Test;
 
 public class VMPublishConsumeTestCase extends VMTestCase {
-
-  public static class FailureProcessor implements Processor {
-
-    @Override
-    public CoreEvent process(CoreEvent event) {
-      throw new UnsupportedOperationException();
-    }
-  }
 
   @Override
   protected String getConfigFile() {
@@ -98,12 +88,12 @@ public class VMPublishConsumeTestCase extends VMTestCase {
 
   @Test
   public void onErrorPropagate() throws Exception {
-    runAndExpect("onErrorPropagate", errorType(VM_ERROR_NAMESPACE, QUEUE_TIMEOUT.name()));
+    runAndExpect("onErrorPropagate", errorType("MULE", "UNKNOWN"));
   }
 
   @Test
   public void publishToFailingQueue() throws Exception {
-    runAndExpect("failingPublishConsume", errorType(VM_ERROR_NAMESPACE, QUEUE_TIMEOUT.name()));
+    runAndExpect("failingPublishConsume", errorType("MULE", "ROUTING"));
   }
 
   private CoreEvent assertPublishConsume(String flowName) throws Exception {
