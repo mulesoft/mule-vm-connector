@@ -10,7 +10,6 @@ import static java.lang.String.format;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import static org.mule.runtime.core.api.config.MuleProperties.OBJECT_QUEUE_MANAGER;
 import static org.slf4j.LoggerFactory.getLogger;
-
 import org.mule.extensions.vm.api.QueueDefinition;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.extensions.vm.internal.listener.VMListener;
@@ -27,12 +26,12 @@ import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.core.api.util.queue.QueueConfiguration;
 import org.mule.runtime.core.api.util.queue.QueueManager;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.slf4j.Logger;
 
@@ -236,10 +235,14 @@ public class VMConnectorQueueManager implements Initialisable, Stoppable {
   public void validateNoListenerOnQueue(String queueName, String operationName, ComponentLocation location) {
     ComponentLocation listenerLocation = listenerQueues.get(queueName);
     if (listenerLocation != null) {
-      throw new IllegalArgumentException(format("Operation '<vm:%s>' in Flow '%s' is trying to consume from queue '%s', but "
+      throw new IllegalArgumentException(format("Operation '<vm:%s>' %sis trying to consume from queue '%s', but "
           + "Flow '%s' defines a <vm:listener> on that queue. It's not allowed to consume from a queue on which "
-          + "a listener already exists", operationName, location.getRootContainerName(), queueName,
+          + "a listener already exists", operationName, getConsumerLocation(location), queueName,
                                                 listenerLocation.getRootContainerName()));
     }
+  }
+
+  private String getConsumerLocation(ComponentLocation location) {
+    return location != null ? "in Flow '" + location.getRootContainerName() + "' " : "";
   }
 }
