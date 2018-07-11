@@ -7,9 +7,16 @@
       http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
-    <flow name="consume">
-        <vm:consume queueName="transientQueue" config-ref="vm" />
-        <test:processor class="org.mule.extensions.vm.test.VMTestCase$EventCaptor" />
-    </flow>
+    <flow name="transientListener">
+        <vm:listener config-ref="vm" queueName="persistentQueue">
+            <redelivery-policy maxRedeliveryCount="3"/>
+        </vm:listener>
 
+        <test:processor throwException="true"/>
+        <error-handler>
+            <on-error-propagate>
+                <test:processor class="org.mule.extensions.vm.test.VMRedeliveryTestCase$RedeliveryCount" />
+            </on-error-propagate>
+        </error-handler>
+    </flow>
 </mule>
