@@ -14,6 +14,7 @@ import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
+import org.mule.extensions.vm.internal.VMErrorResponse;
 import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
@@ -22,6 +23,7 @@ import org.mule.runtime.api.component.location.Location;
 import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.connection.ConnectionProvider;
 import org.mule.runtime.api.exception.MuleException;
+import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerConfig;
@@ -30,6 +32,7 @@ import org.mule.runtime.api.tx.TransactionException;
 import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.Alias;
+import org.mule.runtime.extension.api.annotation.execution.OnError;
 import org.mule.runtime.extension.api.annotation.execution.OnSuccess;
 import org.mule.runtime.extension.api.annotation.execution.OnTerminate;
 import org.mule.runtime.extension.api.annotation.param.Config;
@@ -123,11 +126,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
     connectorQueueManager.unregisterListenerQueue(queueDescriptor.getQueueName());
   }
 
-  @OnSuccess
-  public void onSuccess(@ParameterGroup(name = "Response", showInDsl = true) VMResponseBuilder messageBuilder,
-                        CorrelationInfo correlationInfo,
-                        SourceCallbackContext ctx) {
-
+  private void sendResponse(VMMessage message, SourceCallbackContext ctx) {
     ctx.<String>getVariable(REPLY_TO_QUEUE_NAME).ifPresent(replyTo -> {
       VMConnection connection = ctx.getConnection();
       Queue queue;
@@ -139,7 +138,6 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
       }
 
       if (queue != null) {
-        VMMessage message = new VMMessage(messageBuilder.getContent(), correlationInfo.getCorrelationId());
         try {
           queue.offer(message, queueDescriptor.getQueueTimeoutInMillis());
         } catch (Exception e) {
@@ -149,6 +147,18 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         LOGGER.warn("Could not send response to replyTo queue '{}' because it does not exists", replyTo);
       }
     });
+  }
+
+  @OnSuccess
+  public void onSuccess(@ParameterGroup(name = "Response", showInDsl = true) VMResponseBuilder messageBuilder,
+                        CorrelationInfo correlationInfo,
+                        SourceCallbackContext ctx) {
+    sendResponse(new VMMessage(messageBuilder.getContent(), correlationInfo.getCorrelationId()), ctx);
+  }
+
+  @OnError
+  public void onError(Error error, CorrelationInfo correlationInfo, SourceCallbackContext ctx) {
+    sendResponse(new VMErrorResponse(error, correlationInfo.getCorrelationId()), ctx);
   }
 
   @OnTerminate

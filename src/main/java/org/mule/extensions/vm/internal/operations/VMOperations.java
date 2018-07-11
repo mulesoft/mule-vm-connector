@@ -16,13 +16,16 @@ import org.mule.extensions.vm.internal.QueueDescriptor;
 import org.mule.extensions.vm.internal.ReplyToCommand;
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
+import org.mule.extensions.vm.internal.VMErrorResponse;
 import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.exception.MuleRuntimeException;
+import org.mule.runtime.api.exception.TypedException;
 import org.mule.runtime.api.lifecycle.Startable;
 import org.mule.runtime.api.lifecycle.Stoppable;
+import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerService;
@@ -136,6 +139,10 @@ public class VMOperations implements Startable, Stoppable {
    * <p>
    * The queue on which the content is published has to be one for which a {@code <vm:listener>} <b>doesn't </b> exists.
    * Consuming from queues on which a {@code <vm:listener>} exists is not allowed.
+   * <p>
+   * If the flow that receives and processed the message fails, then that error is propagated and re-thrown by
+   * this operation. Notice that such error type will not be predictable by this operation and could be anything. You
+   * need to be mindful of the listening flow when writing your error handlers.
    *
    * @param content           the content to be published
    * @param queueDescriptor   the queue configuration
@@ -171,7 +178,7 @@ public class VMOperations implements Startable, Stoppable {
                                                         queueDescriptor.getTimeoutUnit()),
                                                  QUEUE_TIMEOUT));
 
-    } catch (ModuleException e) {
+    } catch (ModuleException | TypedException e) {
       throw e;
     } catch (Exception e) {
       throw new MuleRuntimeException(createStaticMessage(format(
@@ -187,6 +194,11 @@ public class VMOperations implements Startable, Stoppable {
 
     Result.Builder<Serializable, VMMessageAttributes> resultBuilder = Result.builder();
     String correlationId = null;
+
+    if (value instanceof VMErrorResponse) {
+      Error error = ((VMErrorResponse) value).getError();
+      throw new TypedException(error.getCause(), error.getErrorType(), error.getDescription());
+    }
 
     if (value instanceof VMMessage) {
       VMMessage message = (VMMessage) value;
