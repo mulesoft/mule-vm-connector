@@ -8,12 +8,15 @@
       http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
 
     <flow name="transientListener">
-        <vm:listener config-ref="vm" queueName="persistentQueue">
+        <vm:listener config-ref="vm" queueName="persistentQueue" transactionalAction="ALWAYS_BEGIN">
             <redelivery-policy maxRedeliveryCount="3"/>
         </vm:listener>
 
         <test:processor throwException="true"/>
         <error-handler>
+            <on-error-propagate type="REDELIVERY_EXHAUSTED">
+                <test:processor class="org.mule.extensions.vm.test.VMRedeliveryTestCase$RedeliveryExhausted" />
+            </on-error-propagate>
             <on-error-propagate>
                 <test:processor class="org.mule.extensions.vm.test.VMRedeliveryTestCase$RedeliveryCount" />
             </on-error-propagate>

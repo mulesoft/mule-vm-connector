@@ -18,6 +18,7 @@ public class VMRedeliveryTestCase extends VMTestCase {
 
   public static final int DELAY = 100;
   private static int REDELIVERY_COUNT;
+  private static boolean REDELIVERY_EXHAUSTED;
 
   public static class RedeliveryCount implements Processor {
 
@@ -28,9 +29,19 @@ public class VMRedeliveryTestCase extends VMTestCase {
     }
   }
 
+  public static class RedeliveryExhausted implements Processor {
+
+    @Override
+    public CoreEvent process(CoreEvent event) throws MuleException {
+      REDELIVERY_EXHAUSTED = true;
+      return event;
+    }
+  }
+
   @Override
   protected void doSetUp() throws Exception {
     REDELIVERY_COUNT = 0;
+    REDELIVERY_EXHAUSTED = false;
   }
 
   @Override
@@ -43,7 +54,8 @@ public class VMRedeliveryTestCase extends VMTestCase {
     Queue queue = getQueue("persistentQueue");
     queue.offer(STRING_PAYLOAD, TIMEOUT);
 
-    check(TIMEOUT, DELAY, () -> REDELIVERY_COUNT >= 3);
+    check(TIMEOUT, DELAY, () -> REDELIVERY_EXHAUSTED);
+    check(TIMEOUT, DELAY, () -> REDELIVERY_COUNT == 4);
     check(TIMEOUT, DELAY, () -> queue.size() == 0);
   }
 }
