@@ -22,6 +22,7 @@ import org.mule.runtime.api.component.location.Location;
 import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.connection.ConnectionProvider;
 import org.mule.runtime.api.exception.MuleException;
+import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerConfig;
@@ -30,6 +31,7 @@ import org.mule.runtime.api.tx.TransactionException;
 import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.Alias;
+import org.mule.runtime.extension.api.annotation.execution.OnError;
 import org.mule.runtime.extension.api.annotation.execution.OnSuccess;
 import org.mule.runtime.extension.api.annotation.execution.OnTerminate;
 import org.mule.runtime.extension.api.annotation.param.Config;
@@ -149,6 +151,11 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
         LOGGER.warn("Could not send response to replyTo queue '{}' because it does not exists", replyTo);
       }
     });
+  }
+
+  @OnError
+  public void onError(Error error, CorrelationInfo correlationInfo, SourceCallbackContext ctx) {
+
   }
 
   @OnTerminate
