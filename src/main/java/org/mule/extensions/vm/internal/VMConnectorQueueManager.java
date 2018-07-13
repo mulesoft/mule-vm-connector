@@ -241,7 +241,7 @@ public class VMConnectorQueueManager implements Initialisable, Stoppable {
     }
   }
 
-  public Queue getTransactionalessQueue(String queueName) {
+  public Queue getQueueWithoutTx(String queueName) {
     return queueManager.getQueueSession().getQueue(queueName);
   }
 

@@ -248,6 +248,6 @@ public class VMOperations implements Startable, Stoppable {
 
     queueManager.validateQueue(queueName, config);
 
-    return skipTransaction ? queueManager.getTransactionalessQueue(queueName) : connection.getQueue(queueName);
+    return skipTransaction ? queueManager.getQueueWithoutTx(queueName) : connection.getQueue(queueName);
   }
 }
