@@ -162,7 +162,7 @@ public class VMOperations implements Startable, Stoppable {
                                                                   @Connection VMConnection connection,
                                                                   CorrelationInfo correlationInfo) {
 
-    final Queue queue = getQueue(queueDescriptor, config, connection);
+    final Queue queue = getQueue(queueDescriptor, config, connection, connection.isInTransaction());
     final Queue replyToQueue = queueManager.createReplyToQueue(queue, connection);
 
     VMMessage message = new ReplyToCommand(content, replyToQueue.getName(),
@@ -240,9 +240,14 @@ public class VMOperations implements Startable, Stoppable {
   }
 
   private Queue getQueue(QueueDescriptor queueDescriptor, VMConnector config, VMConnection connection) {
+    return getQueue(queueDescriptor, config, connection, false);
+  }
+
+  private Queue getQueue(QueueDescriptor queueDescriptor, VMConnector config, VMConnection connection, boolean skipTransaction) {
     final String queueName = queueDescriptor.getQueueName();
 
     queueManager.validateQueue(queueName, config);
-    return connection.getQueue(queueName);
+
+    return skipTransaction ? queueManager.getQueueWithoutTx(queueName) : connection.getQueue(queueName);
   }
 }

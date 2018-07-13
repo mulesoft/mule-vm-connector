@@ -37,6 +37,11 @@ public class VMPublishConsumeTestCase extends VMTestCase {
   }
 
   @Test
+  public void transactionalPublishConsume() throws Exception {
+    assertPublishConsume("transactionalPublishConsume");
+  }
+
+  @Test
   public void publishConsumerWithDefaultCorrelationId() throws Exception {
     CoreEvent event = assertPublishConsume("publishConsume", MY_CORRELATION_ID);
     assertAttributesCorrelationId(event, MY_CORRELATION_ID);

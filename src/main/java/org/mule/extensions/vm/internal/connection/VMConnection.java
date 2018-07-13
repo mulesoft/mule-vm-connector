@@ -7,6 +7,7 @@
 package org.mule.extensions.vm.internal.connection;
 
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
+import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.runtime.api.tx.TransactionException;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.core.api.util.queue.QueueSession;
@@ -15,7 +16,6 @@ import org.mule.runtime.extension.api.connectivity.XATransactionalConnection;
 import javax.transaction.xa.XAResource;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link XATransactionalConnection} which hides the details of Mule's queueing API.
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
  */
 public class VMConnection implements XATransactionalConnection {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(VMConnection.class);
+  private static final Logger LOGGER = getLogger(VMConnection.class);
 
   private final QueueSession queueSession;
   private boolean txBegun = false;
@@ -91,5 +91,9 @@ public class VMConnection implements XATransactionalConnection {
         }
       }
     }
+  }
+
+  public boolean isInTransaction() {
+    return txBegun;
   }
 }
