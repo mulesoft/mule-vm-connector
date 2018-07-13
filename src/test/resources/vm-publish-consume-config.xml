@@ -66,6 +66,12 @@
         <vm:publish-consume queueName="queue" config-ref="vm"/>
     </flow>
 
+    <flow name="transactionalPublishConsume">
+        <try transactionalAction="ALWAYS_BEGIN">
+            <vm:publish-consume queueName="queue" config-ref="vm"/>
+        </try>
+    </flow>
+
     <flow name="publishConsumeWithCustomCorrelationId">
         <vm:publish-consume queueName="queue" correlationId="myCorrelationId" config-ref="vm"/>
     </flow>

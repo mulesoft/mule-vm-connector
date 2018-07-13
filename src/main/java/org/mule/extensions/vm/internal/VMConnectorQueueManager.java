@@ -132,8 +132,7 @@ public class VMConnectorQueueManager implements Initialisable, Stoppable {
    * @param queueName the name of the queue
    * @param location the listener's location
    */
-  public void registerListenerQueue(VMConnector config, String queueName, ComponentLocation location)
-      throws InitialisationException {
+  public void registerListenerQueue(VMConnector config, String queueName, ComponentLocation location) {
     Pair<VMConnector, QueueDefinition> definitionPair = definitionRepository.findByName(queueName)
         .orElseThrow(() -> new IllegalArgumentException(format("Flow '%s' declares a <vm:listener> listening to queue '%s', but "
             + "such queue is not defined",
@@ -240,6 +239,10 @@ public class VMConnectorQueueManager implements Initialisable, Stoppable {
           + "a listener already exists", operationName, getConsumerLocation(location), queueName,
                                                 listenerLocation.getRootContainerName()));
     }
+  }
+
+  public Queue getTransactionalessQueue(String queueName) {
+    return queueManager.getQueueSession().getQueue(queueName);
   }
 
   private String getConsumerLocation(ComponentLocation location) {
