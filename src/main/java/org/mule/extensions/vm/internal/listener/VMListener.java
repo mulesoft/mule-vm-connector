@@ -8,6 +8,7 @@ package org.mule.extensions.vm.internal.listener;
 
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
+import static org.mule.runtime.api.metadata.DataType.STRING;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
@@ -24,6 +25,7 @@ import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.connection.ConnectionProvider;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.message.Error;
+import org.mule.runtime.api.message.ErrorType;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerConfig;
@@ -158,7 +160,9 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   @OnError
   public void onError(Error error, CorrelationInfo correlationInfo, SourceCallbackContext ctx) {
-    sendResponse(new VMErrorResponse(error, correlationInfo.getCorrelationId()), ctx);
+    final ErrorType errorType = error.getErrorType();
+    String msg = errorType.getNamespace() + ":" + errorType.getIdentifier() + ": " + error.getDescription();
+    sendResponse(new VMErrorResponse(new TypedValue<>(msg, STRING), correlationInfo.getCorrelationId()), ctx);
   }
 
   @OnTerminate

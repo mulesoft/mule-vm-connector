@@ -9,6 +9,7 @@ package org.mule.extensions.vm.internal.operations;
 import static java.lang.String.format;
 import static java.util.Optional.ofNullable;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
+import static org.mule.extensions.vm.api.VMError.PUBLISH_CONSUMER_FLOW_ERROR;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import org.mule.extensions.vm.api.VMMessageAttributes;
@@ -25,7 +26,6 @@ import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.exception.TypedException;
 import org.mule.runtime.api.lifecycle.Startable;
 import org.mule.runtime.api.lifecycle.Stoppable;
-import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerService;
@@ -196,8 +196,7 @@ public class VMOperations implements Startable, Stoppable {
     String correlationId = null;
 
     if (value instanceof VMErrorResponse) {
-      Error error = ((VMErrorResponse) value).getError();
-      throw new TypedException(error.getCause(), error.getErrorType(), error.getDescription());
+      throw new ModuleException((String) ((VMErrorResponse) value).getValue().getValue(), PUBLISH_CONSUMER_FLOW_ERROR);
     }
 
     if (value instanceof VMMessage) {

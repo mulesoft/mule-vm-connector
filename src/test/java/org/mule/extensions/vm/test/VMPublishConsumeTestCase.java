@@ -12,6 +12,7 @@ import static org.junit.Assert.assertThat;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.MediaType.APPLICATION_JSON;
 import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
+import org.mule.extensions.vm.api.VMError;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
@@ -19,6 +20,7 @@ import org.mule.runtime.core.api.streaming.bytes.CursorStreamProviderFactory;
 import org.mule.runtime.core.api.streaming.bytes.InMemoryCursorStreamConfig;
 import org.mule.runtime.core.api.streaming.bytes.factory.InMemoryCursorStreamProviderFactory;
 import org.mule.tck.core.streaming.SimpleByteBufferManager;
+import org.mule.tck.junit4.matcher.ErrorTypeMatcher;
 
 import java.io.ByteArrayInputStream;
 
@@ -93,12 +95,16 @@ public class VMPublishConsumeTestCase extends VMTestCase {
 
   @Test
   public void onErrorPropagate() throws Exception {
-    runAndExpect("onErrorPropagate", errorType("MULE", "UNKNOWN"));
+    runAndExpect("onErrorPropagate", publishConsumerErrorTypeMatcher());
   }
 
   @Test
   public void publishToFailingQueue() throws Exception {
-    runAndExpect("failingPublishConsume", errorType("MULE", "ROUTING"));
+    runAndExpect("failingPublishConsume", publishConsumerErrorTypeMatcher());
+  }
+
+  private ErrorTypeMatcher publishConsumerErrorTypeMatcher() {
+    return errorType("VM", VMError.PUBLISH_CONSUMER_FLOW_ERROR.name());
   }
 
   private CoreEvent assertPublishConsume(String flowName) throws Exception {
