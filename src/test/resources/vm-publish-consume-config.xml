@@ -11,8 +11,8 @@
         <vm:queues>
             <vm:queue queueName="queue" queueType="TRANSIENT" />
             <vm:queue queueName="onErrorContinue" queueType="TRANSIENT" />
-            <vm:queue queueName="onErrorPropagate" queueType="TRANSIENT" />
-            <vm:queue queueName="failQueue" queueType="TRANSIENT" />
+            <vm:queue queueName="onErrorPropagate" queueType="PERSISTENT" />
+            <vm:queue queueName="failQueue" queueType="PERSISTENT" />
         </vm:queues>
     </vm:config>
     
@@ -47,14 +47,7 @@
 
     <flow name="onErrorPropagateListener">
         <vm:listener queueName="onErrorPropagate" config-ref="vm" />
-        <try>
-            <test:processor throwException="true" />
-            <error-handler>
-                <on-error-propagate>
-                    <set-payload value="caca" />
-                </on-error-propagate>
-            </error-handler>
-        </try>
+        <test:processor throwException="true" />
     </flow>
 
     <flow name="failListener">

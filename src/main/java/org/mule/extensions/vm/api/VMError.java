@@ -24,6 +24,11 @@ public enum VMError implements ErrorTypeDefinition<VMError> {
   QUEUE_TIMEOUT,
 
   /**
+   * In a publish-consume operation, the flow that listens for the published message failed to process it.
+   */
+  PUBLISH_CONSUMER_FLOW_ERROR,
+
+  /**
    * The referenced queue is empty.
    */
   EMPTY_QUEUE;

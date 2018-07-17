@@ -6,7 +6,9 @@
  */
 package org.mule.extensions.vm.internal;
 
-import org.mule.runtime.api.message.Error;
+import org.mule.runtime.api.metadata.TypedValue;
+
+import java.io.Serializable;
 
 /**
  * Specialization of {@link VMMessage} used to communicate that a flow that processed a value
@@ -16,14 +18,7 @@ import org.mule.runtime.api.message.Error;
  */
 public class VMErrorResponse extends VMMessage {
 
-  private Error error;
-
-  public VMErrorResponse(Error error, String correlationId) {
-    super(null, correlationId);
-    this.error = error;
-  }
-
-  public Error getError() {
-    return error;
+  public VMErrorResponse(TypedValue<Serializable> value, String correlationId) {
+    super(value, correlationId);
   }
 }

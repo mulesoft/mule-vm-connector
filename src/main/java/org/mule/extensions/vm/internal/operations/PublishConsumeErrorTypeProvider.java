@@ -7,6 +7,7 @@
 package org.mule.extensions.vm.internal.operations;
 
 import static java.util.Collections.unmodifiableSet;
+import static org.mule.extensions.vm.api.VMError.PUBLISH_CONSUMER_FLOW_ERROR;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
 import org.mule.runtime.extension.api.annotation.error.ErrorTypeProvider;
 import org.mule.runtime.extension.api.error.ErrorTypeDefinition;
@@ -25,6 +26,7 @@ public class PublishConsumeErrorTypeProvider implements ErrorTypeProvider {
   public Set<ErrorTypeDefinition> getErrorTypes() {
     Set<ErrorTypeDefinition> errors = new HashSet<>();
     errors.add(QUEUE_TIMEOUT);
+    errors.add(PUBLISH_CONSUMER_FLOW_ERROR);
 
     return unmodifiableSet(errors);
   }
