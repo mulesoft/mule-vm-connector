@@ -11,7 +11,6 @@ import static java.util.Optional.ofNullable;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
 import static org.mule.extensions.vm.api.VMError.PUBLISH_CONSUMER_FLOW_ERROR;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
-import static org.mule.runtime.api.component.ComponentIdentifier.builder;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
@@ -22,17 +21,14 @@ import org.mule.extensions.vm.internal.VMErrorResponse;
 import org.mule.extensions.vm.internal.VMMessage;
 import org.mule.extensions.vm.internal.connection.VMConnection;
 import org.mule.runtime.api.component.location.ComponentLocation;
-import org.mule.runtime.api.exception.ErrorTypeRepository;
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.exception.TypedException;
 import org.mule.runtime.api.lifecycle.Startable;
 import org.mule.runtime.api.lifecycle.Stoppable;
-import org.mule.runtime.api.message.ErrorType;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.scheduler.Scheduler;
 import org.mule.runtime.api.scheduler.SchedulerService;
-import org.mule.runtime.api.util.LazyValue;
 import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.runtime.extension.api.annotation.error.Throws;
 import org.mule.runtime.extension.api.annotation.param.Config;
@@ -63,14 +59,6 @@ public class VMOperations implements Startable, Stoppable {
 
   @Inject
   private SchedulerService schedulerService;
-
-  @Inject
-  private ErrorTypeRepository errorTypeRepository;
-
-  private LazyValue<ErrorType> publishConsumerFlowErrorType = new LazyValue<>(
-                                                                              () -> errorTypeRepository.getErrorType(builder()
-                                                                                  .name(PUBLISH_CONSUMER_FLOW_ERROR.name())
-                                                                                  .namespace("VM").build()).get());
 
   private Scheduler scheduler;
 
