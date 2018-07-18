@@ -11,12 +11,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
+import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.core.api.config.MuleProperties.OBJECT_QUEUE_MANAGER;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.functional.api.exception.ExpectedError;
 import org.mule.functional.junit4.MuleArtifactFunctionalTestCase;
 import org.mule.runtime.api.exception.MuleException;
+import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.processor.Processor;
@@ -48,6 +50,7 @@ public abstract class VMTestCase extends MuleArtifactFunctionalTestCase {
   protected static final java.util.Queue<CoreEvent> CAPTURED = new ConcurrentLinkedDeque<>();
   protected static final String VM_ERROR_NAMESPACE = "VM";
   protected static final String MY_CORRELATION_ID = "myCorrelationId";
+  protected static final DataType JSON_DATA_TYPE = DataType.builder(JSON_STRING).charset("UTF-8").build();
   protected static final long TIMEOUT = 5000;
 
   public static class EventCaptor implements Processor {

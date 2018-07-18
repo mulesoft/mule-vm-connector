@@ -81,11 +81,11 @@ public class VMPublishConsumeTestCase extends VMTestCase {
 
     TypedValue<byte[]> payload = flowRunner("publishConsume")
         .withPayload(providerFactory.of(testEvent(), new ByteArrayInputStream(JSON_PAYLOAD.getBytes())))
-        .withMediaType(APPLICATION_JSON)
+        .withMediaType(JSON_DATA_TYPE.getMediaType())
         .run().getMessage().getPayload();
 
     assertThat(new String(payload.getValue()), is(asJson(STRING_PAYLOAD.toLowerCase())));
-    assertThat(payload.getDataType().getMediaType().matches(JSON_STRING.getMediaType()), is(true));
+    assertThat(payload.getDataType().getMediaType().matches(JSON_DATA_TYPE.getMediaType()), is(true));
   }
 
   @Test
