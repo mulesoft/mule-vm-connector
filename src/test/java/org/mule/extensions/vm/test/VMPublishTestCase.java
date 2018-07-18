@@ -11,7 +11,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
-import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.streaming.CursorProvider;
@@ -98,7 +97,7 @@ public class VMPublishTestCase extends VMTestCase {
   }
 
   private void assertPublishStream(Object content) throws Exception {
-    TypedValue<?> value = new TypedValue<>(content, JSON_STRING);
+    TypedValue<?> value = new TypedValue<>(content, JSON_DATA_TYPE);
     LocalDateTime now = now();
     flowRunner("publishToPersistent")
         .withPayload(value.getValue())
@@ -119,7 +118,7 @@ public class VMPublishTestCase extends VMTestCase {
   }
 
   private CoreEvent assertPublish(String flowName, String queueName, String correlationId) throws Exception {
-    TypedValue<String> value = new TypedValue<>("Hello", JSON_STRING);
+    TypedValue<String> value = new TypedValue<>("Hello", JSON_DATA_TYPE);
     LocalDateTime now = now();
     flowRunner(flowName)
         .withPayload(value.getValue())

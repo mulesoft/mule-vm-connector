@@ -17,7 +17,6 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.rules.ExpectedException.none;
 import static org.mockito.Mockito.mock;
-import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import org.mule.runtime.api.component.location.ComponentLocation;
 import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.message.Message;
@@ -112,7 +111,7 @@ public class VMListenerTestCase extends VMTestCase {
     Queue queue = getTransientQueue();
 
     final String payloadValue = "Hello";
-    TypedValue<String> value = new TypedValue<>(payloadValue, JSON_STRING);
+    TypedValue<String> value = new TypedValue<>(payloadValue, JSON_DATA_TYPE);
     LocalDateTime now = now();
     queue.offer(value, TIMEOUT);
 
@@ -121,7 +120,7 @@ public class VMListenerTestCase extends VMTestCase {
     TypedValue payload = message.getPayload();
 
     assertThat(payload.getValue(), is(sameInstance(payloadValue)));
-    assertThat(payload.getDataType(), equalTo(JSON_STRING));
+    assertThat(payload.getDataType(), equalTo(JSON_DATA_TYPE));
     assertAttributes(message.getAttributes(), TRANSIENT_QUEUE_NAME, now);
   }
 
