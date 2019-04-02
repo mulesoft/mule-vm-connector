@@ -9,6 +9,7 @@ package org.mule.extensions.vm.internal.listener;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static org.mule.runtime.api.metadata.DataType.STRING;
+import static org.mule.runtime.extension.api.annotation.param.MediaType.ANY;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
@@ -39,6 +40,7 @@ import org.mule.runtime.extension.api.annotation.execution.OnSuccess;
 import org.mule.runtime.extension.api.annotation.execution.OnTerminate;
 import org.mule.runtime.extension.api.annotation.param.Config;
 import org.mule.runtime.extension.api.annotation.param.Connection;
+import org.mule.runtime.extension.api.annotation.param.MediaType;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
@@ -69,6 +71,7 @@ import org.slf4j.Logger;
  */
 @Alias("listener")
 @EmitsResponse
+@MediaType(value = ANY, strict = false)
 public class VMListener extends Source<Serializable, VMMessageAttributes> {
 
   private static final Logger LOGGER = getLogger(VMListener.class);
