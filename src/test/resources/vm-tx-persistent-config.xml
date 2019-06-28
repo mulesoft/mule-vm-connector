@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+      xmlns:test="http://www.mulesoft.org/schema/mule/test"
+      xmlns="http://www.mulesoft.org/schema/mule/core"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+      http://www.mulesoft.org/schema/mule/test http://www.mulesoft.org/schema/mule/test/current/mule-test.xsd
+      http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+
+    <flow name="listener" initialState="stopped">
+        <vm:listener queueName="persistentQueue" transactionalAction="ALWAYS_BEGIN" config-ref="vm" />
+        <flow-ref name="capture" />
+    </flow>
+
+    <flow name="failingListener" initialState="stopped">
+        <vm:listener queueName="persistentQueue" transactionalAction="ALWAYS_BEGIN" config-ref="vm"/>
+        <flow-ref name="capture" />
+        <test:processor throwException="true" />
+    </flow>
+
+    <flow name="publishInTx">
+        <try transactionalAction="BEGIN_OR_JOIN">
+            <vm:publish queueName="persistentQueue" config-ref="vm"/>
+            <flow-ref name="fail" />
+        </try>
+    </flow>
+
+    <sub-flow name="capture">
+        <test:processor class="org.mule.extensions.vm.test.VMTestCase$EventCaptor" />
+    </sub-flow>
+    
+    <sub-flow name="fail">
+        <choice>
+            <when expression="#[vars.fail]">
+                <test:processor throwException="true" />
+            </when>
+        </choice>
+    </sub-flow>
+
+</mule>
