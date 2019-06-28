@@ -87,9 +87,6 @@ public class VMTxTestCase extends VMTestCase {
   public void listenerCommit() throws Exception {
     startListenerFlow("listener");
 
-    Thread.sleep(50000);
-
-
     queueGetter.apply(this).put(STRING_PAYLOAD);
     new PollingProber(1000, 100).check(new JUnitProbe() {
 
