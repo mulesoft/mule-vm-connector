@@ -6,11 +6,13 @@
  */
 package org.mule.extensions.vm.test;
 
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+
 import org.mule.extensions.vm.internal.VMConnector;
 import org.mule.extensions.vm.internal.VMConnectorQueueManager;
 import org.mule.extensions.vm.internal.VMMessage;
@@ -19,14 +21,30 @@ import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.construct.Flow;
 import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.extension.ExtensionManager;
+import org.mule.runtime.core.api.util.queue.Queue;
 import org.mule.tck.probe.JUnitProbe;
 import org.mule.tck.probe.PollingProber;
+import org.mule.test.runner.RunnerDelegateTo;
+
+import java.util.Collection;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
 import org.junit.Test;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
+@RunnerDelegateTo(Parameterized.class)
 public class VMTxTestCase extends VMTestCase {
+
+  @Parameters(name = "{0}")
+  public static Collection<Object[]> data() {
+    return asList(new Object[][] {
+        {"vm-tx-config.xml", (Function<VMTxTestCase, Queue>) tc -> tc.getTransientQueue()},
+        {"vm-tx-persistent-config.xml", (Function<VMTxTestCase, Queue>) tc -> tc.getPersistentQueue()}
+    });
+  }
 
   @Inject
   private VMConnectorQueueManager vmQueueManager;
@@ -34,9 +52,18 @@ public class VMTxTestCase extends VMTestCase {
   @Inject
   private ExtensionManager extensionManager;
 
+  private final String config;
+
+  private final Function<VMTxTestCase, Queue> queueGetter;
+
+  public VMTxTestCase(String config, Function<VMTxTestCase, Queue> queueGetter) {
+    this.config = config;
+    this.queueGetter = queueGetter;
+  }
+
   @Override
   protected String[] getConfigFiles() {
-    return new String[] {"vm-tx-config.xml", "vm-configs.xml"};
+    return new String[] {config, "vm-configs.xml"};
   }
 
   @Test
@@ -44,7 +71,7 @@ public class VMTxTestCase extends VMTestCase {
     simulateListener();
 
     publish(false);
-    TypedValue typedValue = ((VMMessage) getTransientQueue().poll(1000)).getValue();
+    TypedValue typedValue = ((VMMessage) queueGetter.apply(this).poll(1000)).getValue();
     assertThat(typedValue.getValue(), equalTo(STRING_PAYLOAD));
   }
 
@@ -53,14 +80,14 @@ public class VMTxTestCase extends VMTestCase {
     simulateListener();
 
     assertThat(publish(true), is(nullValue()));
-    assertThat(getTransientQueue().poll(1000), is(nullValue()));
+    assertThat(queueGetter.apply(this).poll(1000), is(nullValue()));
   }
 
   @Test
   public void listenerCommit() throws Exception {
     startListenerFlow("listener");
 
-    getTransientQueue().put(STRING_PAYLOAD);
+    queueGetter.apply(this).put(STRING_PAYLOAD);
     new PollingProber(1000, 100).check(new JUnitProbe() {
 
       @Override
@@ -69,7 +96,7 @@ public class VMTxTestCase extends VMTestCase {
       }
     });
 
-    assertThat(getTransientQueue().poll(100), is(nullValue()));
+    assertThat(queueGetter.apply(this).poll(100), is(nullValue()));
   }
 
   @Test
@@ -77,7 +104,7 @@ public class VMTxTestCase extends VMTestCase {
     final String flowName = "failingListener";
     startListenerFlow(flowName);
 
-    getTransientQueue().put(STRING_PAYLOAD);
+    queueGetter.apply(this).put(STRING_PAYLOAD);
     new PollingProber(1000, 100).check(new JUnitProbe() {
 
       @Override
@@ -87,7 +114,7 @@ public class VMTxTestCase extends VMTestCase {
     });
 
     stopListenerFlow(flowName);
-    String value = (String) getTransientQueue().poll(1000);
+    String value = (String) queueGetter.apply(this).poll(1000);
     assertThat(value, equalTo(STRING_PAYLOAD));
   }
 
