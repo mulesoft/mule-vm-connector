@@ -46,7 +46,7 @@ public class QueueNamesValueProviderTestCase extends VMTestCase {
     ValueResult values =
         service.getValues(Location.builder().globalName("listener").addSourcePart().build(),
                           "queueName");
-    assertThat(values.isSuccess(), is(true));
+    assertThat(values.isSuccess(), is(false));
     assertThat(values.getValues(), hasItems(valueWithId("transientQueue"), valueWithId("persistentQueue")));
   }
 }
