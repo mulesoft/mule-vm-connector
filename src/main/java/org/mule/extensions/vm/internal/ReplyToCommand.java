@@ -10,6 +10,7 @@ import org.mule.extensions.vm.internal.listener.VMListener;
 import org.mule.runtime.api.metadata.TypedValue;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Command used to tell a {@link VMListener} that the {@link #value} should be pushed into the owning Flow,
@@ -31,6 +32,19 @@ public class ReplyToCommand extends VMMessage {
    */
   public ReplyToCommand(TypedValue<Serializable> value, String replyToQueueName, String correlationInfo) {
     super(value, correlationInfo);
+    this.replyToQueueName = replyToQueueName;
+  }
+
+  /**
+   * Creates a new instance
+   *
+   * @param value            the published content
+   * @param properties       optional map of user properties
+   * @param replyToQueueName the name of the reply-To queue
+   */
+  public ReplyToCommand(TypedValue<Serializable> value, Map<String, TypedValue<Serializable>> properties, String replyToQueueName,
+                        String correlationInfo) {
+    super(value, properties, correlationInfo);
     this.replyToQueueName = replyToQueueName;
   }
 

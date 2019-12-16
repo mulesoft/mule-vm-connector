@@ -53,7 +53,9 @@ import org.mule.runtime.extension.api.runtime.source.SourceCallbackContext;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -158,7 +160,9 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
   public void onSuccess(@ParameterGroup(name = "Response", showInDsl = true) VMResponseBuilder messageBuilder,
                         CorrelationInfo correlationInfo,
                         SourceCallbackContext ctx) {
-    sendResponse(new VMMessage(messageBuilder.getContent(), correlationInfo.getCorrelationId()), ctx);
+    sendResponse(new VMMessage(messageBuilder.getContent(), messageBuilder.getProperties().orElse(new HashMap<>()),
+                               correlationInfo.getCorrelationId()),
+                 ctx);
   }
 
   @OnError
@@ -224,11 +228,13 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
           }
 
           String correlationId = null;
+          Map<String, TypedValue<Serializable>> properties = new HashMap<>();
           Result.Builder resultBuilder = Result.<Serializable, VMMessageAttributes>builder();
 
           if (value instanceof VMMessage) {
             VMMessage command = (VMMessage) value;
             correlationId = command.getCorrelationId().orElse(null);
+            properties = command.getProperties().orElse(new HashMap<>());
 
             if (value instanceof ReplyToCommand) {
               ReplyToCommand replyTo = (ReplyToCommand) value;
@@ -246,7 +252,7 @@ public class VMListener extends Source<Serializable, VMMessageAttributes> {
             resultBuilder.output(value);
           }
 
-          resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName(), correlationId));
+          resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName(), correlationId, properties));
           Result<Serializable, VMMessageAttributes> result = resultBuilder.build();
 
           ctx.setCorrelationId(correlationId);
