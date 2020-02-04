@@ -7,19 +7,31 @@
 package org.mule.extensions.vm.test;
 
 import static java.time.LocalDateTime.now;
-import static java.util.Arrays.*;
-import static org.hamcrest.CoreMatchers.*;
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mule.runtime.api.metadata.DataType.fromObject;
 import static org.mule.runtime.api.metadata.DataType.fromType;
 
 import com.google.common.base.Objects;
 import io.qameta.allure.Description;
+import io.qameta.allure.Issue;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.mule.runtime.api.message.Message;
+import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.TypedValue;
+import org.mule.runtime.api.streaming.Cursor;
 import org.mule.runtime.api.streaming.CursorProvider;
+import org.mule.runtime.api.streaming.object.CursorIterator;
+import org.mule.runtime.api.streaming.object.CursorIteratorProvider;
 import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.streaming.bytes.CursorStreamProviderFactory;
@@ -31,10 +43,13 @@ import java.io.ByteArrayInputStream;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 
 import org.junit.Test;
 
 public class VMPublishTestCase extends VMTestCase {
+
+  protected static final byte[] BYTES_PAYLOAD = JSON_PAYLOAD.getBytes();
 
   private static final String PUBLISH_TO_TRANSIENT_FLOW_NAME = "publishToTransient";
 
@@ -45,7 +60,6 @@ public class VMPublishTestCase extends VMTestCase {
 
   private static final TypedValue NON_SERIALIZABLE_VALUE =
       new TypedValue(new NonSerializableDummy("dummy"), fromType(NonSerializableDummy.class));
-
 
   @Rule
   public ExpectedException expectedException = ExpectedException.none();
@@ -80,12 +94,14 @@ public class VMPublishTestCase extends VMTestCase {
 
   @Test
   @Description("Publish a serializable object into a transient queue")
+  @Issue("MULE-17974")
   public void publishSerializableToTransient() throws Exception {
     assertPublish("publishToTransient", TRANSIENT_QUEUE_NAME, SERIALIZABLE_VALUE);
   }
 
   @Test
   @Description("Publish a list of serializable objects into a persistent queue")
+  @Issue("MULE-17974")
   public void publishListOfSerializableToTransient() throws Exception {
     List<TypedValue> values = asList(SERIALIZABLE_VALUE, SERIALIZABLE_VALUE);
     assertPublish("publishToTransient", TRANSIENT_QUEUE_NAME, new TypedValue<>(values, fromObject(values)));
@@ -93,34 +109,62 @@ public class VMPublishTestCase extends VMTestCase {
 
   @Test
   @Description("Publish a serializable object into a persistent queue")
+  @Issue("MULE-17974")
   public void publishSerializableToPersistent() throws Exception {
     assertPublish("publishToPersistent", PERSISTENT_QUEUE_NAME, SERIALIZABLE_VALUE);
   }
 
   @Test
   @Description("Publish a list of serializable objects into a persistent queue")
+  @Issue("MULE-17974")
   public void publishListOfSerializableToPersistent() throws Exception {
-    List<TypedValue> values = asList(SERIALIZABLE_VALUE, SERIALIZABLE_VALUE);
-    assertPublish("publishToPersistent", PERSISTENT_QUEUE_NAME, new TypedValue<>(values, fromObject(values)));
+    TypedValue<List<TypedValue>> typedValue =
+        new TypedValue<>(asList(SERIALIZABLE_VALUE, SERIALIZABLE_VALUE), fromType(ArrayList.class));
+
+    assertPublish("publishToTransient", TRANSIENT_QUEUE_NAME,
+                  new TypedValue<>(asList(SERIALIZABLE_VALUE, SERIALIZABLE_VALUE),
+                                   fromObject(asList(SERIALIZABLE_VALUE, SERIALIZABLE_VALUE))));
   }
 
   @Test
   @Description("Publish a non serializable object into a transient queue")
-  // This test fails because the published message is made with a toString() representation of the payload
+  @Issue("MULE-17974")
   public void publishNonSerializableToTransient() throws Exception {
-    assertPublish("publishToTransient", TRANSIENT_QUEUE_NAME, NON_SERIALIZABLE_VALUE);
+    LocalDateTime now = now();
+
+    publish("publishToTransient", NON_SERIALIZABLE_VALUE);
+
+    CoreEvent event = getCapturedEvent();
+    Message message = event.getMessage();
+    TypedValue payload = message.getPayload();
+
+    // The published message is made with a toString() representation of the payload, is it OK?
+    assertThat(payload.getValue(), is(equalTo(NON_SERIALIZABLE_VALUE.getValue().toString())));
+    assertThat(payload.getDataType(), equalTo(fromType(String.class)));
+    assertAttributes(message.getAttributes(), TRANSIENT_QUEUE_NAME, now);
   }
 
   @Test
   @Description("Publish a non serializable object into a persistent queue.  It shouldn't be allowed")
-  // The current behaviour is to make a payload.toString() and publish it. Should it raise an exception?
+  @Issue("MULE-17974")
   public void publishNonSerializableToPersistent() throws Exception {
-    // expectedException.expect(SomeException.class);
-    assertPublish("publishToPersistent", PERSISTENT_QUEUE_NAME, NON_SERIALIZABLE_VALUE);
+    LocalDateTime now = now();
+
+    publish("publishToPersistent", NON_SERIALIZABLE_VALUE);
+
+    CoreEvent event = getCapturedEvent();
+    Message message = event.getMessage();
+    TypedValue payload = message.getPayload();
+
+    // The published message is made with a toString() representation of the payload, is it OK?
+    assertThat(payload.getValue(), is(equalTo(NON_SERIALIZABLE_VALUE.getValue().toString())));
+    assertThat(payload.getDataType(), equalTo(fromType(String.class)));
+    assertAttributes(message.getAttributes(), PERSISTENT_QUEUE_NAME, now);
   }
 
   @Test
   @Description("Publish a list of non serializable objects into a transient queue")
+  @Issue("MULE-17974")
   public void publishNestedNonSerializableToTransient() throws Exception {
     List<NonSerializableDummy> values = asList(new NonSerializableDummy("A"), new NonSerializableDummy("b"));
 
@@ -129,10 +173,11 @@ public class VMPublishTestCase extends VMTestCase {
 
   @Test
   @Description("Publish a list of non serializable objects into a persistent queue")
-  // If there are non serializable objects inside a list or any object graph, it fails trying to serialize the payload
+  @Issue("MULE-17974")
   public void publishNestedNonSerializableToPersistent() throws Exception {
-    // expectedException.expectCause(instanceOf(org.mule.runtime.api.serialization.SerializationException.class));
-    // expectedException.expectMessage("Could not serialize object.");
+    // If there are non serializable objects inside a list or any object graph, it fails trying to serialize the payload
+    expectedException.expectCause(instanceOf(org.mule.runtime.api.serialization.SerializationException.class));
+    expectedException.expectMessage("Could not serialize object.");
 
     List<NonSerializableDummy> values = asList(new NonSerializableDummy("A"), new NonSerializableDummy("b"));
 
@@ -141,29 +186,92 @@ public class VMPublishTestCase extends VMTestCase {
 
   @Test
   public void publishStream() throws Exception {
-    assertPublishStream(new ByteArrayInputStream(JSON_PAYLOAD.getBytes()));
+    assertPublishStream(BYTES_PAYLOAD);
   }
 
   @Test
   @Description("Publish a list of repeatable streams into a persistent queue")
-  // If the repeatable stream is inside a list or any object graph, it fails trying to serialize the payload
+  @Issue("MULE-17974")
   public void publishListOfRepeatableStream() throws Exception {
-
-    // expectedException.expectCause(instanceOf(org.mule.runtime.api.serialization.SerializationException.class));
-    // expectedException.expectMessage("Could not serialize object.");
-
-    CursorStreamProviderFactory cursorStreamProviderFactory =
+    CursorStreamProviderFactory providerFactory =
         new InMemoryCursorStreamProviderFactory(new SimpleByteBufferManager(),
                                                 InMemoryCursorStreamConfig.getDefault(),
                                                 streamingManager);
 
-    List<CursorProvider> providers = asList(
-                                            (CursorProvider) cursorStreamProviderFactory
-                                                .of(testEvent(), new ByteArrayInputStream(JSON_PAYLOAD.getBytes())),
-                                            (CursorProvider) cursorStreamProviderFactory
-                                                .of(testEvent(), new ByteArrayInputStream(JSON_PAYLOAD.getBytes())));
+    List<CursorProvider> providers =
+        asList((CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD)),
+               (CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD)));
 
-    publish("publishToPersistent", new TypedValue<>(asList(providers), fromObject(providers)));
+    publish("publishToPersistent", new TypedValue<>(providers, fromType(List.class)));
+  }
+
+  @Test
+  @Description("Publish a list of CursorStream into a persistent queue")
+  @Issue("MULE-17974")
+  public void publishListOfCursorStream() throws Exception {
+    CursorStreamProviderFactory providerFactory =
+        new InMemoryCursorStreamProviderFactory(new SimpleByteBufferManager(), InMemoryCursorStreamConfig.getDefault(),
+                                                streamingManager);
+
+    List<Cursor> cursors =
+        asList(((CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD))).openCursor(),
+               ((CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD))).openCursor());
+
+    publish("publishToPersistent", new TypedValue<>(cursors, fromType(List.class)));
+  }
+
+  @Test
+  @Description("Publish a list of CursorIteratorProvider into a persistent queue")
+  @Issue("MULE-17974")
+  public void publishListOfCursorIteratorProvider() throws Exception {
+    List<String> list = asList("1", "2", "3");
+
+    List<CursorIteratorProvider> providers =
+        asList(mockCursorIteratorProvider(list.iterator()), mockCursorIteratorProvider(list.iterator()));
+
+    publish("publishToPersistent", new TypedValue<>(providers, fromType(providers.getClass())));
+
+    Message message = getCapturedEvent().getMessage();
+
+    assertThat(message.getPayload().getValue(), is(equalTo(asList(list, list))));
+  }
+
+  @Test
+  @Description("Publish a list of CursorIterator into a persistent queue")
+  @Issue("MULE-17974")
+  public void publishListOfCursorIterator() throws Exception {
+    List<String> list = asList("1", "2", "3");
+
+    List<CursorIterator> cursorIterators = asList(mockCursorIterator(list.iterator()), mockCursorIterator(list.iterator()));
+
+    publish("publishToPersistent", new TypedValue<>(cursorIterators, fromType(cursorIterators.getClass())));
+
+    Message message = getCapturedEvent().getMessage();
+
+    assertThat(message.getPayload().getValue(), is(equalTo(asList(list, list))));
+  }
+
+
+  @Test
+  @Description("Publish a map whose values are repeatable streams into a persistent queue")
+  @Issue("MULE-17974")
+  public void publishMapOfRepeatableStream() throws Exception {
+    CursorStreamProviderFactory cursorProviderFactory =
+        new InMemoryCursorStreamProviderFactory(new SimpleByteBufferManager(),
+                                                InMemoryCursorStreamConfig.getDefault(),
+                                                streamingManager);
+
+
+    HashMap<String, CursorProvider> providers = new HashMap<String, CursorProvider>();
+    providers.put("k1", (CursorProvider) cursorProviderFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD)));
+    providers.put("k2", (CursorProvider) cursorProviderFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD)));
+
+    DataType mapDataType = DataType.builder(fromType(Map.class))
+        .asMapTypeBuilder()
+        .keyType(CursorProvider.class)
+        .build();
+
+    publish("publishToPersistent", new TypedValue(providers, mapDataType));
   }
 
   @Test
@@ -176,9 +284,18 @@ public class VMPublishTestCase extends VMTestCase {
 
     CursorProvider provider = (CursorProvider) cursorStreamProviderFactory.of(
                                                                               testEvent(),
-                                                                              new ByteArrayInputStream(JSON_PAYLOAD.getBytes()));
+                                                                              new ByteArrayInputStream(BYTES_PAYLOAD));
 
     assertPublishStream(provider);
+  }
+
+  @Test
+  public void publishPayload() throws Exception {
+    List<TypedValue> values = asList(SERIALIZABLE_VALUE);
+    publish("publishToPersistent", new TypedValue<>(values, fromObject(values)));
+
+    CoreEvent event = getCapturedEvent();
+    Message message = event.getMessage();
   }
 
   @Test
@@ -253,6 +370,21 @@ public class VMPublishTestCase extends VMTestCase {
         .run();
   }
 
+  private <T> CursorIteratorProvider mockCursorIteratorProvider(Iterator<T> iterator) {
+    CursorIteratorProvider cursorIteratorProvider = mock(CursorIteratorProvider.class);
+    when(cursorIteratorProvider.openCursor()).thenAnswer(a -> mockCursorIterator(iterator));
+    return cursorIteratorProvider;
+  }
+
+  private <T> CursorIterator<T> mockCursorIterator(Iterator<T> iterator) {
+    CursorIterator<T> cursorIterator = mock(CursorIterator.class);
+
+    doAnswer(a -> a.getMethod().invoke(iterator, a.getArguments()))
+        .when(cursorIterator)
+        .forEachRemaining(any(Consumer.class));
+
+    return cursorIterator;
+  }
 
 }
 
@@ -313,3 +445,4 @@ class NonSerializableDummy {
     return Objects.equal(name, dummy.name);
   }
 }
+

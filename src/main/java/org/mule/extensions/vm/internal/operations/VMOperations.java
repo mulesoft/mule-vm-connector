@@ -11,6 +11,7 @@ import static java.util.Optional.ofNullable;
 import static org.mule.extensions.vm.api.VMError.EMPTY_QUEUE;
 import static org.mule.extensions.vm.api.VMError.PUBLISH_CONSUMER_FLOW_ERROR;
 import static org.mule.extensions.vm.api.VMError.QUEUE_TIMEOUT;
+import static org.mule.extensions.vm.internal.util.StreamingUtils.resolveCursors;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.extensions.vm.internal.QueueDescriptor;
@@ -219,6 +220,22 @@ public class VMOperations implements Startable, Stoppable {
 
   private void doPublish(Serializable content, QueueDescriptor queueDescriptor, Queue queue) {
     try {
+      if (queueManager.getQueueConfiguration(queue.getName()).isPersistent()) {
+        if (content instanceof ReplyToCommand) {
+          ReplyToCommand original = (ReplyToCommand) content;
+          content = new ReplyToCommand(resolveCursors(original.getValue()),
+                                       original.getReplyToQueueName(),
+                                       original.getCorrelationId().orElse(null));
+        } else if (content instanceof VMErrorResponse) {
+          VMErrorResponse original = (VMErrorResponse) content;
+          content = new VMErrorResponse(resolveCursors(original.getValue()),
+                                        original.getCorrelationId().orElse(null));
+        } else if (content instanceof VMMessage) {
+          VMMessage original = (VMMessage) content;
+          content = new VMMessage(resolveCursors(original.getValue()),
+                                  original.getCorrelationId().orElse(null));
+        }
+      }
       if (!queue.offer(content, queueDescriptor.getQueueTimeoutInMillis())) {
         throw new ModuleException("Timeout publishing message to VM queue " + queueDescriptor.getQueueName(), QUEUE_TIMEOUT);
       }
