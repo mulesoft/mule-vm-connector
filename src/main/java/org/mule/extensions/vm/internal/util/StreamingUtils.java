@@ -27,7 +27,9 @@ import org.mule.runtime.api.streaming.bytes.CursorStreamProvider;
 import org.mule.runtime.api.streaming.object.CursorIterator;
 import org.mule.runtime.api.streaming.object.CursorIteratorProvider;
 
-public class StreamingUtils {
+public final class StreamingUtils {
+
+  private StreamingUtils() {}
 
   /**
    * If the {@code typedValue} has a {@link Map} whose values are a stream payload (instance of {@link Cursor}) then this method

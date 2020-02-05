@@ -282,6 +282,8 @@ public class VMPublishTestCase extends VMTestCase {
 
     CoreEvent event = getCapturedEvent();
     Message message = event.getMessage();
+
+    assertThat(message.getPayload().getValue(), is(equalTo(values)));
   }
 
   @Test
