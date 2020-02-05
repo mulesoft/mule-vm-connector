@@ -8,27 +8,33 @@ package org.mule.extensions.vm.test;
 
 import static java.time.LocalDateTime.now;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.mule.runtime.api.metadata.DataType.fromObject;
 import static org.mule.runtime.api.metadata.DataType.fromType;
 
-import com.google.common.base.Objects;
-import io.qameta.allure.Description;
-import io.qameta.allure.Issue;
+import java.io.ByteArrayInputStream;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.TypedValue;
-import org.mule.runtime.api.streaming.Cursor;
 import org.mule.runtime.api.streaming.CursorProvider;
 import org.mule.runtime.api.streaming.object.CursorIterator;
 import org.mule.runtime.api.streaming.object.CursorIteratorProvider;
@@ -39,13 +45,10 @@ import org.mule.runtime.core.api.streaming.bytes.InMemoryCursorStreamConfig;
 import org.mule.runtime.core.api.streaming.bytes.factory.InMemoryCursorStreamProviderFactory;
 import org.mule.tck.core.streaming.SimpleByteBufferManager;
 
-import java.io.ByteArrayInputStream;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.Consumer;
+import com.google.common.base.Objects;
 
-import org.junit.Test;
+import io.qameta.allure.Description;
+import io.qameta.allure.Issue;
 
 public class VMPublishTestCase extends VMTestCase {
 
@@ -190,65 +193,48 @@ public class VMPublishTestCase extends VMTestCase {
   }
 
   @Test
-  @Description("Publish a list of repeatable streams into a persistent queue")
+  @Description("Publish a ConsumerStreamingIterator on a persistent queue")
   @Issue("MULE-17974")
-  public void publishListOfRepeatableStream() throws Exception {
-    CursorStreamProviderFactory providerFactory =
-        new InMemoryCursorStreamProviderFactory(new SimpleByteBufferManager(),
-                                                InMemoryCursorStreamConfig.getDefault(),
-                                                streamingManager);
+  public void publishIteratorToPersistent() throws Exception {
+    Iterator<String> values = asList("one", "two").iterator();
 
-    List<CursorProvider> providers =
-        asList((CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD)),
-               (CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD)));
-
-    publish("publishToPersistent", new TypedValue<>(providers, fromType(List.class)));
-  }
-
-  @Test
-  @Description("Publish a list of CursorStream into a persistent queue")
-  @Issue("MULE-17974")
-  public void publishListOfCursorStream() throws Exception {
-    CursorStreamProviderFactory providerFactory =
-        new InMemoryCursorStreamProviderFactory(new SimpleByteBufferManager(), InMemoryCursorStreamConfig.getDefault(),
-                                                streamingManager);
-
-    List<Cursor> cursors =
-        asList(((CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD))).openCursor(),
-               ((CursorProvider) providerFactory.of(testEvent(), new ByteArrayInputStream(BYTES_PAYLOAD))).openCursor());
-
-    publish("publishToPersistent", new TypedValue<>(cursors, fromType(List.class)));
-  }
-
-  @Test
-  @Description("Publish a list of CursorIteratorProvider into a persistent queue")
-  @Issue("MULE-17974")
-  public void publishListOfCursorIteratorProvider() throws Exception {
-    List<String> list = asList("1", "2", "3");
-
-    List<CursorIteratorProvider> providers =
-        asList(mockCursorIteratorProvider(list.iterator()), mockCursorIteratorProvider(list.iterator()));
-
-    publish("publishToPersistent", new TypedValue<>(providers, fromType(providers.getClass())));
+    publish("publishToPersistent", new TypedValue<>(values, fromType(Iterator.class)));
 
     Message message = getCapturedEvent().getMessage();
 
-    assertThat(message.getPayload().getValue(), is(equalTo(asList(list, list))));
+    // see MULE-18035
+    assertThat(message.getPayload().getValue(), is(equalTo(values.toString())));
   }
 
   @Test
-  @Description("Publish a list of CursorIterator into a persistent queue")
+  @Description("Publish a CursorIteratorProvider on a persistent queue")
   @Issue("MULE-17974")
-  public void publishListOfCursorIterator() throws Exception {
+  public void publishCursorIteratorProviderToPersistent() throws Exception {
     List<String> list = asList("1", "2", "3");
 
-    List<CursorIterator> cursorIterators = asList(mockCursorIterator(list.iterator()), mockCursorIterator(list.iterator()));
+    CursorIteratorProvider cursorIteratorProvider = mockCursorIteratorProvider(list.iterator());
 
-    publish("publishToPersistent", new TypedValue<>(cursorIterators, fromType(cursorIterators.getClass())));
+    publish("publishToPersistent",
+            new TypedValue<>(cursorIteratorProvider, fromType(CursorIteratorProvider.class)));
 
     Message message = getCapturedEvent().getMessage();
 
-    assertThat(message.getPayload().getValue(), is(equalTo(asList(list, list))));
+    // see MULE-18035
+    assertThat(message.getPayload().getValue(), is(instanceOf(String.class)));
+  }
+
+  @Test
+  @Description("Publish a CursorIterator on a persistent queue")
+  @Issue("MULE-17974")
+  public void publishCursorIteratorToPersistent() throws Exception {
+    CursorIterator<String> cursorIterator = mockCursorIterator(asList("1", "2", "3").iterator());
+
+    publish("publishToPersistent", new TypedValue<>(cursorIterator, fromType(CursorIterator.class)));
+
+    Message message = getCapturedEvent().getMessage();
+
+    // see MULE-18035
+    assertThat(message.getPayload().getValue(), is(equalTo(cursorIterator.toString())));
   }
 
 
@@ -381,68 +367,65 @@ public class VMPublishTestCase extends VMTestCase {
 
     doAnswer(a -> a.getMethod().invoke(iterator, a.getArguments()))
         .when(cursorIterator)
-        .forEachRemaining(any(Consumer.class));
+        .forEachRemaining(any(java.util.function.Consumer.class));
 
     return cursorIterator;
   }
 
-}
+  private static class SerializableDummy implements Serializable {
 
+    private String name;
 
-class SerializableDummy implements Serializable {
+    public SerializableDummy(String name) {
+      this.name = name;
+    }
 
-  private String name;
+    public String getName() {
+      return this.name;
+    }
 
-  public SerializableDummy(String name) {
-    this.name = name;
+    @Override
+    public String toString() {
+      return "Dummy{" + "name='" + name + "'}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (o == null || getClass() != o.getClass())
+        return false;
+      SerializableDummy dummy = (SerializableDummy) o;
+      return Objects.equal(name, dummy.name);
+    }
   }
 
-  public String getName() {
-    return this.name;
-  }
 
-  @Override
-  public String toString() {
-    return "Dummy{" + "name='" + name + "'}";
-  }
+  private static class NonSerializableDummy {
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    SerializableDummy dummy = (SerializableDummy) o;
-    return Objects.equal(name, dummy.name);
-  }
-}
+    private String name;
 
+    public NonSerializableDummy(String name) {
+      this.name = name;
+    }
 
-class NonSerializableDummy {
+    public String getName() {
+      return this.name;
+    }
 
-  private String name;
+    @Override
+    public String toString() {
+      return "Dummy{" + "name='" + name + "'}";
+    }
 
-  public NonSerializableDummy(String name) {
-    this.name = name;
-  }
-
-  public String getName() {
-    return this.name;
-  }
-
-  @Override
-  public String toString() {
-    return "Dummy{" + "name='" + name + "'}";
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (o == null || getClass() != o.getClass())
-      return false;
-    NonSerializableDummy dummy = (NonSerializableDummy) o;
-    return Objects.equal(name, dummy.name);
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (o == null || getClass() != o.getClass())
+        return false;
+      NonSerializableDummy dummy = (NonSerializableDummy) o;
+      return Objects.equal(name, dummy.name);
+    }
   }
 }
-

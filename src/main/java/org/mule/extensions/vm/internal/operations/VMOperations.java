@@ -220,21 +220,19 @@ public class VMOperations implements Startable, Stoppable {
 
   private void doPublish(Serializable content, QueueDescriptor queueDescriptor, Queue queue) {
     try {
-      if (queueManager.getQueueConfiguration(queue.getName()).isPersistent()) {
-        if (content instanceof ReplyToCommand) {
-          ReplyToCommand original = (ReplyToCommand) content;
-          content = new ReplyToCommand(resolveCursors(original.getValue()),
-                                       original.getReplyToQueueName(),
-                                       original.getCorrelationId().orElse(null));
-        } else if (content instanceof VMErrorResponse) {
-          VMErrorResponse original = (VMErrorResponse) content;
-          content = new VMErrorResponse(resolveCursors(original.getValue()),
-                                        original.getCorrelationId().orElse(null));
-        } else if (content instanceof VMMessage) {
-          VMMessage original = (VMMessage) content;
-          content = new VMMessage(resolveCursors(original.getValue()),
-                                  original.getCorrelationId().orElse(null));
-        }
+      if (content instanceof ReplyToCommand) {
+        ReplyToCommand original = (ReplyToCommand) content;
+        content = new ReplyToCommand(resolveCursors(original.getValue()),
+                                     original.getReplyToQueueName(),
+                                     original.getCorrelationId().orElse(null));
+      } else if (content instanceof VMErrorResponse) {
+        VMErrorResponse original = (VMErrorResponse) content;
+        content = new VMErrorResponse(resolveCursors(original.getValue()),
+                                      original.getCorrelationId().orElse(null));
+      } else if (content instanceof VMMessage) {
+        VMMessage original = (VMMessage) content;
+        content = new VMMessage(resolveCursors(original.getValue()),
+                                original.getCorrelationId().orElse(null));
       }
       if (!queue.offer(content, queueDescriptor.getQueueTimeoutInMillis())) {
         throw new ModuleException("Timeout publishing message to VM queue " + queueDescriptor.getQueueName(), QUEUE_TIMEOUT);
