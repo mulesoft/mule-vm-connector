@@ -358,13 +358,13 @@ public class VMPublishTestCase extends VMTestCase {
         .run();
   }
 
-  private <T> CursorIteratorProvider mockCursorIteratorProvider(Iterator<T> iterator) {
+  protected static <T> CursorIteratorProvider mockCursorIteratorProvider(Iterator<T> iterator) {
     CursorIteratorProvider cursorIteratorProvider = mock(CursorIteratorProvider.class);
     when(cursorIteratorProvider.openCursor()).thenAnswer(a -> mockCursorIterator(iterator));
     return cursorIteratorProvider;
   }
 
-  private <T> CursorIterator<T> mockCursorIterator(Iterator<T> iterator) {
+  protected static <T> CursorIterator<T> mockCursorIterator(Iterator<T> iterator) {
     CursorIterator<T> cursorIterator = mock(CursorIterator.class);
 
     doAnswer(a -> a.getMethod().invoke(iterator, a.getArguments()))

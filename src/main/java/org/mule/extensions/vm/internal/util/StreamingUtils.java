@@ -72,9 +72,9 @@ public final class StreamingUtils {
 
   private static Object consumeValue(Object value) {
     if (value instanceof InputStream) {
-      value = toByteArray(((CursorStream) value));
+      value = toByteArray(((InputStream) value));
     } else if (value instanceof Iterator) {
-      value = asList((CursorIterator) value);
+      value = asList((Iterator) value);
     } else if (value instanceof CursorStreamProvider) {
       CursorStream cursorStream = null;
       try {
@@ -96,7 +96,7 @@ public final class StreamingUtils {
     return value;
   }
 
-  private static Object asList(CursorIterator value) {
+  private static Object asList(Iterator value) {
     List consumed = new LinkedList<>();
     value.forEachRemaining(consumed::add);
     return consumed;
