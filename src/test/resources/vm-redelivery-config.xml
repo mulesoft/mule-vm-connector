@@ -15,10 +15,10 @@
         <test:processor throwException="true"/>
         <error-handler>
             <on-error-propagate type="REDELIVERY_EXHAUSTED">
-                <test:processor class="org.mule.extensions.vm.test.VMRedeliveryTestCase$RedeliveryExhausted" />
+                <test:processor class="io.portx.ihub.vm.test.VMRedeliveryTestCase$RedeliveryExhausted" />
             </on-error-propagate>
             <on-error-propagate>
-                <test:processor class="org.mule.extensions.vm.test.VMRedeliveryTestCase$RedeliveryCount" />
+                <test:processor class="io.portx.ihub.vm.test.VMRedeliveryTestCase$RedeliveryCount" />
             </on-error-propagate>
         </error-handler>
     </flow>
