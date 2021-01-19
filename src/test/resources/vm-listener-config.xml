@@ -25,7 +25,7 @@
 
     <flow name="synchronousListener" maxConcurrency="1">
         <vm:listener queueName="synchronousQueue" numberOfConsumers="1" config-ref="sync" transactionalAction="ALWAYS_BEGIN"/>
-        <test:processor class="org.mule.extensions.vm.test.VMTestCase$Sleep" />
+        <test:processor class="io.portx.ihub.vm.test.VMTestCase$Sleep" />
         <set-payload value="#[now()]" />
         <flow-ref name="capture"/>
     </flow>
@@ -35,7 +35,7 @@
     </flow>
 
     <sub-flow name="capture">
-        <test:processor class="org.mule.extensions.vm.test.VMTestCase$EventCaptor" />
+        <test:processor class="io.portx.ihub.vm.test.VMTestCase$EventCaptor" />
     </sub-flow>
 
 </mule>
