@@ -6,13 +6,17 @@
  */
 package org.mule.extensions.vm.internal.listener;
 
+import static java.util.Optional.ofNullable;
 import static org.mule.runtime.extension.api.annotation.param.Optional.PAYLOAD;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.extension.api.annotation.param.Content;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
+import org.mule.runtime.extension.api.runtime.parameter.ParameterResolver;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * a Response builder parameter group for the vm:listener
@@ -28,11 +32,23 @@ public class VMResponseBuilder {
    * the message got into the queue through the {@code vm:publish-consume} operation
    */
   @Parameter
-  @Content
+  @Content(primary = true)
   @Optional(defaultValue = PAYLOAD)
   private TypedValue<Serializable> content;
 
+  /**
+   * The properties to send along with the content
+   */
+  @Parameter
+  @Content
+  @Optional
+  Map<String, TypedValue<Serializable>> properties;
+
   public TypedValue<Serializable> getContent() {
     return content;
+  }
+
+  public java.util.Optional<Map<String, TypedValue<Serializable>>> getProperties() {
+    return ofNullable(properties);
   }
 }

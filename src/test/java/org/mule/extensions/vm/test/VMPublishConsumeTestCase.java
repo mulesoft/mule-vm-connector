@@ -8,7 +8,7 @@ package org.mule.extensions.vm.test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mule.runtime.api.metadata.DataType.JSON_STRING;
 import static org.mule.runtime.api.metadata.MediaType.APPLICATION_JSON;
 import static org.mule.tck.junit4.matcher.ErrorTypeMatcher.errorType;
@@ -23,6 +23,8 @@ import org.mule.tck.core.streaming.SimpleByteBufferManager;
 import org.mule.tck.junit4.matcher.ErrorTypeMatcher;
 
 import java.io.ByteArrayInputStream;
+import java.io.Serializable;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -59,6 +61,19 @@ public class VMPublishConsumeTestCase extends VMTestCase {
     CoreEvent event = assertPublishConsume("publishConsumeWithCustomCorrelationId");
     assertAttributesCorrelationId(event, MY_CORRELATION_ID);
     assertThat(event.getCorrelationId(), is(not(MY_CORRELATION_ID)));
+  }
+
+  @Test
+  public void publishConsumeWithProperties() throws Exception {
+    CoreEvent event = assertPublishConsume("publishConsumeWithProperties");
+    VMMessageAttributes attributes = (VMMessageAttributes) event.getMessage().getAttributes().getValue();
+    Map<String, TypedValue<Serializable>> properties = attributes.getProperties();
+    assertNotNull(properties);
+    assertTrue(properties.containsKey("prop1"));
+    assertTrue(properties.containsKey("prop2"));
+    Map prop1 = (Map) properties.get("prop1").getValue();
+    assertEquals("Hello", prop1.get("salute"));
+    assertEquals("World", properties.get("prop2").getValue());
   }
 
   @Test

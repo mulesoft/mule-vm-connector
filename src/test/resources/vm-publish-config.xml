@@ -25,4 +25,20 @@
         <vm:publish queueName="transientQueue" sendCorrelationId="NEVER" correlationId="myCorrelationId" config-ref="vm" />
     </flow>
 
+    <flow name="publishWithProperties">
+        <vm:publish queueName="transientQueue" config-ref="vm">
+            <vm:content>#[payload]</vm:content>
+            <vm:properties>
+                #[
+                    {
+                        prop1: {
+                            salute: "Hello"
+                        },
+                        prop2: "World"
+                    }
+                ]
+            </vm:properties>
+        </vm:publish>
+    </flow>
+
 </mule>

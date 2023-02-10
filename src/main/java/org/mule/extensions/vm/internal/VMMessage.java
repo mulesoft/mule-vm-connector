@@ -10,6 +10,8 @@ import static java.util.Optional.ofNullable;
 import org.mule.runtime.api.metadata.TypedValue;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -21,10 +23,16 @@ public class VMMessage implements Serializable {
 
   private final TypedValue<Serializable> value;
   private final String correlationId;
+  private final Map<String, TypedValue<Serializable>> properties;
 
   public VMMessage(TypedValue<Serializable> value, String correlationId) {
+    this(value, new HashMap(), correlationId);
+  }
+
+  public VMMessage(TypedValue<Serializable> value, Map<String, TypedValue<Serializable>> properties, String correlationId) {
     this.value = value;
     this.correlationId = correlationId;
+    this.properties = properties;
   }
 
   public TypedValue<Serializable> getValue() {
@@ -33,5 +41,9 @@ public class VMMessage implements Serializable {
 
   public Optional<String> getCorrelationId() {
     return ofNullable(correlationId);
+  }
+
+  public Optional<Map<String, TypedValue<Serializable>>> getProperties() {
+    return ofNullable(properties);
   }
 }

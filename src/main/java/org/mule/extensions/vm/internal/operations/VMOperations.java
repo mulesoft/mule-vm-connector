@@ -40,8 +40,11 @@ import org.mule.runtime.extension.api.exception.ModuleException;
 import org.mule.runtime.extension.api.runtime.operation.Result;
 import org.mule.runtime.extension.api.runtime.parameter.CorrelationInfo;
 import org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy;
+import org.mule.runtime.extension.api.runtime.parameter.ParameterResolver;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -79,6 +82,7 @@ public class VMOperations implements Startable, Stoppable {
    * Publishes the given {@code content} into the queue of the given {@code queueName}.
    *
    * @param content           the content to be published
+   * @param properties        optional map of properties
    * @param queueDescriptor   the queue configuration
    * @param sendCorrelationId options on whether to include an outbound correlation id or not
    * @param correlationId     allows to set a custom correlation id
@@ -87,7 +91,8 @@ public class VMOperations implements Startable, Stoppable {
    * @param correlationInfo   the current message's correlation info
    */
   @Throws(PublishErrorTypeProvider.class)
-  public void publish(@Content TypedValue<Serializable> content,
+  public void publish(@Content(primary = true) TypedValue<Serializable> content,
+                      @Content @org.mule.runtime.extension.api.annotation.param.Optional Map<String, TypedValue<Serializable>> properties,
                       @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
                       @ConfigOverride OutboundCorrelationStrategy sendCorrelationId,
                       @org.mule.runtime.extension.api.annotation.param.Optional String correlationId,
@@ -97,7 +102,8 @@ public class VMOperations implements Startable, Stoppable {
 
     Queue queue = getQueue(queueDescriptor, config, connection);
     VMMessage message =
-        new VMMessage(content, sendCorrelationId.getOutboundCorrelationId(correlationInfo, correlationId).orElse(null));
+        new VMMessage(content, properties,
+                      sendCorrelationId.getOutboundCorrelationId(correlationInfo, correlationId).orElse(null));
 
     doPublish(message, queueDescriptor, queue);
   }
@@ -154,7 +160,8 @@ public class VMOperations implements Startable, Stoppable {
    * @return The response generated from the invoked listener's flow
    */
   @Throws(PublishConsumeErrorTypeProvider.class)
-  public Result<Serializable, VMMessageAttributes> publishConsume(@Content TypedValue<Serializable> content,
+  public Result<Serializable, VMMessageAttributes> publishConsume(@Content(primary = true) TypedValue<Serializable> content,
+                                                                  @Content @org.mule.runtime.extension.api.annotation.param.Optional Map<String, TypedValue<Serializable>> properties,
                                                                   @ParameterGroup(name = "queue") QueueDescriptor queueDescriptor,
                                                                   @ConfigOverride OutboundCorrelationStrategy sendCorrelationId,
                                                                   @org.mule.runtime.extension.api.annotation.param.Optional String correlationId,
@@ -165,7 +172,7 @@ public class VMOperations implements Startable, Stoppable {
     final Queue queue = getQueue(queueDescriptor, config, connection, connection.isInTransaction());
     final Queue replyToQueue = queueManager.createReplyToQueue(queue, connection);
 
-    VMMessage message = new ReplyToCommand(content, replyToQueue.getName(),
+    VMMessage message = new ReplyToCommand(content, properties, replyToQueue.getName(),
                                            sendCorrelationId.getOutboundCorrelationId(correlationInfo, correlationId)
                                                .orElse(null));
     try {
@@ -194,6 +201,7 @@ public class VMOperations implements Startable, Stoppable {
 
     Result.Builder<Serializable, VMMessageAttributes> resultBuilder = Result.builder();
     String correlationId = null;
+    Map<String, TypedValue<Serializable>> properties = new HashMap<>();
 
     if (value instanceof VMErrorResponse) {
       throw new ModuleException((String) ((VMErrorResponse) value).getValue().getValue(), PUBLISH_CONSUMER_FLOW_ERROR);
@@ -203,6 +211,7 @@ public class VMOperations implements Startable, Stoppable {
       VMMessage message = (VMMessage) value;
       value = message.getValue();
       correlationId = message.getCorrelationId().orElse(null);
+      properties = message.getProperties().orElse(new HashMap<>());
     }
 
     if (value instanceof TypedValue) {
@@ -213,7 +222,7 @@ public class VMOperations implements Startable, Stoppable {
       resultBuilder.output(value);
     }
 
-    resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName(), correlationId));
+    resultBuilder.attributes(new VMMessageAttributes(queueDescriptor.getQueueName(), correlationId, properties));
     return resultBuilder.build();
   }
 

@@ -22,6 +22,7 @@
                 <vm:content>
                     #[lower(payload.salute)]
                 </vm:content>
+                <vm:properties>#[attributes.properties]</vm:properties>
             </vm:response>
         </vm:listener>
         <logger />
@@ -83,6 +84,21 @@
     
     <flow name="failingPublishConsume">
         <vm:publish-consume queueName="failQueue" config-ref="vm"/>
+    </flow>
+
+    <flow name="publishConsumeWithProperties">
+        <vm:publish-consume queueName="queue" config-ref="vm" timeout="100000">
+            <vm:properties>
+                #[
+                    {
+                        prop1: {
+                            salute: "Hello"
+                        },
+                        prop2: "World"
+                    }
+                ]
+            </vm:properties>
+        </vm:publish-consume>
     </flow>
 
 </mule>

@@ -10,7 +10,10 @@ import static java.time.LocalDateTime.now;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+
+import org.mule.extensions.vm.api.VMMessageAttributes;
 import org.mule.runtime.api.message.Message;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.api.streaming.CursorProvider;
@@ -22,7 +25,9 @@ import org.mule.runtime.core.api.streaming.bytes.factory.InMemoryCursorStreamPro
 import org.mule.tck.core.streaming.SimpleByteBufferManager;
 
 import java.io.ByteArrayInputStream;
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -82,6 +87,20 @@ public class VMPublishTestCase extends VMTestCase {
   public void publishWithDefaultCorrelationId() throws Exception {
     CoreEvent event = assertPublish(PUBLISH_TO_TRANSIENT_FLOW_NAME, TRANSIENT_QUEUE_NAME, MY_CORRELATION_ID);
     assertThat(event.getCorrelationId(), is(MY_CORRELATION_ID));
+  }
+
+  @Test
+  public void publishWithProperties() throws Exception {
+    CoreEvent event = assertPublish("publishWithProperties", TRANSIENT_QUEUE_NAME);
+    VMMessageAttributes attributes = (VMMessageAttributes) event.getMessage().getAttributes().getValue();
+    assertNotNull(attributes);
+    Map<String, TypedValue<Serializable>> properties = attributes.getProperties();
+    assertNotNull(properties);
+    assertTrue(properties.containsKey("prop1"));
+    assertTrue(properties.containsKey("prop2"));
+    Map prop1 = (Map) properties.get("prop1").getValue();
+    assertEquals("Hello", prop1.get("salute"));
+    assertEquals("World", properties.get("prop2").getValue());
   }
 
   @Test
