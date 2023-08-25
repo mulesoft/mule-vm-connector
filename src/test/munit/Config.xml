@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <vm:config name="VM_Config">
+        <vm:queues >
+            <vm:queue queueName="transientQueue" queueType="TRANSIENT" />
+            <vm:queue queueName="persistentQueue" queueType="PERSISTENT" />
+        </vm:queues>
+    </vm:config>
+
+    <vm:config name="VM_ConfigReconnection" sendCorrelationId="NEVER">
+        <vm:connection >
+            <reconnection failsDeployment="true" >
+                <reconnect />
+            </reconnection>
+        </vm:connection>
+        <expiration-policy maxIdleTime="50" timeUnit="SECONDS" />
+        <vm:queues >
+            <vm:queue queueName="transient" />
+            <vm:queue queueName="persistent" queueType="PERSISTENT" />
+        </vm:queues>
+    </vm:config>
+
+    <vm:config name="VM_ConfigTimeOut" sendCorrelationId="NEVER">
+        <vm:connection >
+            <reconnection failsDeployment="true" >
+                <reconnect />
+            </reconnection>
+        </vm:connection>
+        <expiration-policy maxIdleTime="60000" timeUnit="MILLISECONDS" />
+        <vm:queues >
+            <vm:queue queueName="transientVMQueue" maxOutstandingMessages="1"/>
+            <vm:queue queueName="persistentVMQueue" queueType="PERSISTENT" maxOutstandingMessages="1"/>
+        </vm:queues>
+    </vm:config>
+
+</mule>

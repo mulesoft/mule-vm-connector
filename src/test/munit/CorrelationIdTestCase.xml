@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+
+    <munit:config name="CorrelationIdTestCase.xml"/>
+
+    <munit:test name="customCorrelationId" description="Validates custom Correlation ID" >
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="correlationIdListener"/>
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <set-variable variableName="correlationId" value="#['customCorrelationId']"/>
+            <vm:publish-consume queueName="persistentQueue" config-ref="VM_Config" sendCorrelationId="ALWAYS" correlationId="#[vars.correlationId]"/>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:dequeue/>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::equalTo(vars.correlationId)]"/>
+            <munit-tools:assert-equals actual="#[vars.correlationId]" expected="#['customCorrelationId']"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="neverSendCustomCorrelationId" description="Never send correlation id" >
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="correlationIdListener"/>
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <set-variable variableName="correlationId" value="#['customCorrelationId']"/>
+            <vm:publish-consume queueName="persistentQueue" config-ref="VM_Config" sendCorrelationId="NEVER"/>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:dequeue/>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::not(MunitTools::equalTo(vars.correlationId))]"/>
+        </munit:validation>
+    </munit:test>
+
+    <flow name="correlationIdListener">
+        <vm:listener queueName="persistentQueue" config-ref="VM_Config"/>
+        <munit-tools:queue>
+            <munit-tools:value>#[correlationId]</munit-tools:value>
+        </munit-tools:queue>
+    </flow>
+
+</mule>

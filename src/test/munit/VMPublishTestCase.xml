@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <munit:config name="VMPublishTestCase.xml" />
+
+    <munit:test name="vm-publishFlowTest" description="publish queue">
+        <munit:execution >
+            <logger level="INFO" message="#[payload]"/>
+            <vm:publish queueName="transientQueue" config-ref="VM_Config" sendCorrelationId="ALWAYS" correlationId="#[now()]">
+            </vm:publish>
+            <logger level="INFO" message='#["VM publish completed the message publication successfully."]'/>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]"/>
+        </munit:validation>
+    </munit:test>
+    <munit:test name="vm-connectorTest" description="Test">
+        <munit:execution>
+            <logger level="INFO" doc:id="561a3720-3a3a-4fd6-bf08-51515759ff92" message="#[payload]"/>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that is="#[MunitTools::notNullValue()]" expression="#[payload]"/>
+            <munit-tools:assert-that expression='#["message"]' is="#[MunitTools::containsString('message')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="publishCorrelationId" description="Validates publish Correlation ID" >
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="listener"/>
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <set-variable variableName="correlationId" value="#['customCorrelationId']"/>
+            <vm:publish queueName="transientQueue" config-ref="VM_Config" sendCorrelationId="ALWAYS" correlationId="#[vars.correlationId]"/>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:dequeue/>
+            <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::equalTo(vars.correlationId)]"/>
+            <munit-tools:assert-equals actual="#[vars.correlationId]" expected="#['customCorrelationId']"/>
+        </munit:validation>
+    </munit:test>
+
+    <flow name="listener">
+        <vm:listener queueName="transientQueue" config-ref="VM_Config"/>
+        <munit-tools:queue>
+            <munit-tools:value>#[correlationId]</munit-tools:value>
+        </munit-tools:queue>
+    </flow>
+
+</mule>

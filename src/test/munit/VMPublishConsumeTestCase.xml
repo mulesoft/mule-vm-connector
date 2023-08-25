@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+    <munit:config name="VMPublishConsumeTestCase.xml" />
+
+    <munit:test name="publishConsume" description="PublishConsume Test" >
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vmSourceFlow" />
+        </munit:enable-flow-sources>
+        <munit:execution >
+            <ee:transform>
+                <ee:message >
+                    <ee:set-payload >
+                        <![CDATA[%dw 2.0
+output application/json
+---
+"This is message"]]>
+                    </ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <vm:publish-consume queueName="transientQueue" config-ref="VM_Config" sendCorrelationId="AUTO" correlationId="myCorrelationId"/>
+        </munit:execution>
+        <munit:validation>
+            <until-successful maxRetries="5" millisBetweenRetries="5000">
+                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]" />
+                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::containsString('message')]" />
+            </until-successful>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="`publish-consume-message" description="Publish consume message using reconnection config">
+        <munit:execution >
+            <set-variable value='#[["result"]]' variableName="result" />
+            <try>
+                <foreach collection="#[1 to 5000]">
+                    <vm:publish config-ref="VM_ConfigReconnection" queueName="transient"/>
+                    <vm:publish-consume queueName="persistent" config-ref="VM_ConfigReconnection"/>
+                    <ee:transform>
+                        <ee:message>
+                            <ee:set-payload>
+                                <![CDATA[%dw 2.0
+output application/json
+---
+vars.result << payload
+]]>
+                            </ee:set-payload>
+                        </ee:message>
+                        <ee:variables>
+                            <ee:set-variable variableName="result">
+                                <![CDATA[%dw 2.0
+output application/java
+---
+vars.result<<payload]]>
+                            </ee:set-variable>
+                        </ee:variables>
+                    </ee:transform>
+                </foreach>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="false" type="VM:QUEUE_TIMEOUT" />
+                </error-handler>
+            </try>
+            <set-payload value="#[vars.result]" />
+            <foreach collection="#[payload]" counterVariableName="message">
+                <logger level="INFO" message="#[payload]" />
+            </foreach>
+        </munit:execution>
+        <munit:validation >
+            <until-successful maxRetries="5" millisBetweenRetries="5000">
+                <munit-tools:assert-that expression="#[payload]" is='#[MunitTools::hasItem("result")]'/>
+            </until-successful>
+        </munit:validation>
+    </munit:test>
+
+    <flow name="vmSourceFlow" >
+        <vm:listener queueName="transientQueue" config-ref="VM_Config" />
+        <ee:transform>
+            <ee:message >
+                <ee:set-payload >
+                    <![CDATA[%dw 2.0
+output application/json
+---
+payload]]>
+                </ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+
+</mule>
