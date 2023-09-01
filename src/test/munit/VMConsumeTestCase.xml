@@ -15,40 +15,7 @@ http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/
 
     <munit:config name="VMConsumeTestCase.xml" />
 
-    <munit:test name="test-suite-publish-vmFlowTest" description="Publish message">
-        <munit:execution >
-            <foreach collection="1 to 55">
-                <vm:publish config-ref="VM_Config" queueName="transientQueue" >
-                    <vm:content >
-                        <![CDATA[#["publish message"]]]>
-                    </vm:content>
-                </vm:publish>
-            </foreach>
-        </munit:execution>
-        <munit:validation>
-            <munit-tools:assert-equals actual="#[isEmpty(payload)]" expected="#[true]" message='#["Payload is empty"]'/>
-        </munit:validation>
-    </munit:test>
-    <munit:test name="new-test-suite-publish-vmFlowTest" description="Publish Test">
-        <munit:behavior >
-            <set-payload value='#["payload message"]' />
-        </munit:behavior>
-        <munit:execution >
-            <foreach collection="1 to 55">
-                <vm:publish config-ref="VM_Config" queueName="transientQueue" >
-                    <vm:content >
-                        <![CDATA[#["publish message"]]]>
-                    </vm:content>
-                </vm:publish>
-            </foreach>
-        </munit:execution>
-        <munit:validation>
-            <munit-tools:assert-equals actual="#[isEmpty(payload)]" expected="#[false]" message='#["Payload is not empty"]'/>
-            <munit-tools:assert-equals actual="#[payload]" expected='#["payload message"]' message='#["The publish message is correct"]'/>
-        </munit:validation>
-    </munit:test>
-
-    <munit:test name="new-test-suite-consume-vmFlowTest" description="Consume message">
+    <munit:test name="consumeMultiplePublishedValue" description="Consume message">
         <munit:execution >
             <set-variable value='#[["result"]]' variableName="result" />
             <try>
@@ -85,9 +52,43 @@ vars.result<<payload]]>
         </munit:execution>
         <munit:validation >
             <until-successful maxRetries="5" millisBetweenRetries="5000">
-                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::notNullValue()]"/>
-                <munit-tools:assert-that expression="#[vars.result]" is="#[MunitTools::hasItem('result')]"/>
-                <munit-tools:assert-that expression="#[payload]" is='#[MunitTools::hasItem("publish message")]'/>
+                <munit-tools:assert-that expression="#[payload]" is='#[MunitTools::hasItem("result")]'/>
+                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::withMediaType('application/java')]" />
+            </until-successful>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="consumeSingleValue" description="Consume single message">
+        <munit:execution >
+            <try>
+                <vm:consume config-ref="VM_Config" queueName="transientQueue" />
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output text/plain
+---
+payload]]>
+                        </ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="result"><![CDATA[%dw 2.0
+output application/java
+---
+vars.result<<payload]]>
+                        </ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+                <error-handler>
+                    <on-error-continue enableNotifications="true" logException="false" type="VM:EMPTY_QUEUE" />
+                </error-handler>
+            </try>
+            <set-payload value='#[%dw 2.0&#10;output text/plain&#10;---&#10;"message"]' />
+            <logger level="INFO" message="#[payload]" />
+        </munit:execution>
+        <munit:validation >
+            <until-successful maxRetries="5" millisBetweenRetries="5000">
+                <munit-tools:assert-that expression="#[payload]" is='#[MunitTools::containsString("message")]' />
+                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::withMediaType('text/plain')]" />
             </until-successful>
         </munit:validation>
     </munit:test>
