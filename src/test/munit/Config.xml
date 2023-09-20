@@ -17,29 +17,15 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
         </vm:queues>
     </vm:config>
 
-    <vm:config name="VM_ConfigReconnection" sendCorrelationId="NEVER">
-        <vm:connection >
-            <reconnection failsDeployment="true" >
-                <reconnect />
-            </reconnection>
-        </vm:connection>
-        <expiration-policy maxIdleTime="50" timeUnit="SECONDS" />
-        <vm:queues >
-            <vm:queue queueName="transient" />
-            <vm:queue queueName="persistent" queueType="PERSISTENT" />
+    <vm:config name="sync">
+        <vm:queues>
+            <vm:queue queueName="synchronousQueue" queueType="PERSISTENT" />
         </vm:queues>
     </vm:config>
 
-    <vm:config name="VM_ConfigTimeOut" sendCorrelationId="NEVER">
-        <vm:connection >
-            <reconnection failsDeployment="true" >
-                <reconnect />
-            </reconnection>
-        </vm:connection>
-        <expiration-policy maxIdleTime="60000" timeUnit="MILLISECONDS" />
-        <vm:queues >
-            <vm:queue queueName="transientVMQueue" maxOutstandingMessages="1"/>
-            <vm:queue queueName="persistentVMQueue" queueType="PERSISTENT" maxOutstandingMessages="1"/>
+    <vm:config name="onError">
+        <vm:queues>
+            <vm:queue queueName="onErrorPropagate" queueType="PERSISTENT" />
         </vm:queues>
     </vm:config>
 

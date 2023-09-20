@@ -15,7 +15,7 @@ http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/
 
     <munit:config name="VMConsumeFromQueueWithListenerTestCase.xml" />
 
-    <munit:test name="whenConsumeFromQueueWithListener_thenExceptionIsThrown" description="MUnit Test" expectedErrorType="MULE:UNKNOWN" expectedErrorDescription="Operation &apos;&lt;vm:consume&gt;&apos; in Flow &apos;whenConsumeFromQueueWithListener_thenExceptionIsThrown&apos; is trying to consume from queue &apos;transientQueue&apos;, but Flow &apos;listener-transient-queue&apos; defines a &lt;vm:listener&gt; on that queue. It's not allowed to consume from a queue on which a listener already exists">
+    <munit:test name="consume-from-queue-with-listener-test" description="Test that consuming from a queue with listener throws exception" expectedErrorType="MULE:UNKNOWN" expectedErrorDescription="Operation &apos;&lt;vm:consume&gt;&apos; in Flow &apos;consume-from-queue-with-listener-test&apos; is trying to consume from queue &apos;transientQueue&apos;, but Flow &apos;listener-transient-queue&apos; defines a &lt;vm:listener&gt; on that queue. It's not allowed to consume from a queue on which a listener already exists">
         <munit:enable-flow-sources >
             <munit:enable-flow-source value="listener-transient-queue" />
         </munit:enable-flow-sources>
@@ -26,17 +26,7 @@ http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/
 
     <flow name="listener-transient-queue" >
         <vm:listener config-ref="VM_Config" queueName="transientQueue"/>
-        <munit-tools:store key="listenerData">
-            <munit-tools:value ><![CDATA[#[
-            output application/json
-            ---
-            {
-                "payload": payload,
-                "attributes": message.attributes,
-                "attributesClassType": message.attributes.^class
-            }
-            ]]]></munit-tools:value>
-        </munit-tools:store>
+        <logger />
     </flow>
 
 </mule>

@@ -15,82 +15,42 @@ http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/
 
     <munit:config name="VMConsumeTestCase.xml" />
 
-    <munit:test name="consumeMultiplePublishedValue" description="Consume message">
-        <munit:execution >
-            <set-variable value='#[["result"]]' variableName="result" />
-            <try>
-                <foreach collection="#[1 to 5000]">
-                    <vm:consume config-ref="VM_Config" queueName="transientQueue" />
-                    <ee:transform>
-                        <ee:message>
-                            <ee:set-payload>
-                                <![CDATA[%dw 2.0
+    <munit:test name="consume-typed-value-test" description="Test the consume operation on a transient queue">
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
 output application/json
----
-vars.result << payload
-]]>
-                            </ee:set-payload>
-                        </ee:message>
-                        <ee:variables>
-                            <ee:set-variable variableName="result">
-                                <![CDATA[%dw 2.0
-output application/java
----
-vars.result<<payload]]>
-                            </ee:set-variable>
-                        </ee:variables>
-                    </ee:transform>
-                </foreach>
-                <error-handler>
-                    <on-error-continue enableNotifications="true" logException="false" type="VM:EMPTY_QUEUE" />
-                </error-handler>
-            </try>
-            <set-payload value="#[vars.result]" />
-            <foreach collection="#[payload]" counterVariableName="message">
-                <logger level="INFO" message="#[payload]" />
-            </foreach>
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+            <flow-ref name="publish-transient-flow"/>
+        </munit:behavior>
+        <munit:execution>
+            <vm:consume queueName="transientQueue" config-ref="VM_Config" />
         </munit:execution>
-        <munit:validation >
-            <until-successful maxRetries="5" millisBetweenRetries="5000">
-                <munit-tools:assert-that expression="#[payload]" is='#[MunitTools::hasItem("result")]'/>
-                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::withMediaType('application/java')]" />
-            </until-successful>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo(vars.payload)]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
         </munit:validation>
     </munit:test>
 
-    <munit:test name="consumeSingleValue" description="Consume single message">
-        <munit:execution >
-            <try>
-                <vm:consume config-ref="VM_Config" queueName="transientQueue" />
-                <ee:transform>
-                    <ee:message>
-                        <ee:set-payload><![CDATA[%dw 2.0
-output text/plain
----
-payload]]>
-                        </ee:set-payload>
-                    </ee:message>
-                    <ee:variables>
-                        <ee:set-variable variableName="result"><![CDATA[%dw 2.0
-output application/java
----
-vars.result<<payload]]>
-                        </ee:set-variable>
-                    </ee:variables>
-                </ee:transform>
-                <error-handler>
-                    <on-error-continue enableNotifications="true" logException="false" type="VM:EMPTY_QUEUE" />
-                </error-handler>
-            </try>
-            <set-payload value='#[%dw 2.0&#10;output text/plain&#10;---&#10;"message"]' />
-            <logger level="INFO" message="#[payload]" />
+    <munit:test name="empty-queue-test" expectedErrorType="VM:EMPTY_QUEUE" description="Test the consume operation on an empty queue and expect an exception to be thrown">
+        <munit:execution>
+            <vm:consume queueName="transientQueue" config-ref="VM_Config" />
         </munit:execution>
-        <munit:validation >
-            <until-successful maxRetries="5" millisBetweenRetries="5000">
-                <munit-tools:assert-that expression="#[payload]" is='#[MunitTools::containsString("message")]' />
-                <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::withMediaType('text/plain')]" />
-            </until-successful>
-        </munit:validation>
     </munit:test>
+
+    <flow name="publish-transient-flow">
+        <vm:publish queueName="transientQueue" config-ref="VM_Config">
+            <vm:content>#[vars.payload]</vm:content>
+        </vm:publish>
+    </flow>
 
 </mule>
