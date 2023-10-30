@@ -31,10 +31,13 @@
         <munit.input.directory>src/test/munit</munit.input.directory>
         <munit.citizen.input.directory>src/test/munit-citizen</munit.citizen.input.directory>
         <munit.output.directory>${basedir}/target/test-mule/munit</munit.output.directory>
-        <munit.extensions.maven.plugin.version>1.1.3</munit.extensions.maven.plugin.version>
-        <munit.version>2.3.13</munit.version>
+        <munit.extensions.maven.plugin.version>1.2.0-SNAPSHOT</munit.extensions.maven.plugin.version>
+        <munit.version>3.1.0-SNAPSHOT</munit.version>
 
         <mtf.javaopts></mtf.javaopts>
+
+        <!-- runtime version to run -->
+        <runtimeVersion>4.6.0-SNAPSHOT</runtimeVersion>
     </properties>
 
     <distributionManagement>
@@ -176,7 +179,7 @@
                     <dependency>
                         <groupId>com.mulesoft.munit</groupId>
                         <artifactId>mtf-tools</artifactId>
-                        <version>1.1.1</version>
+                        <version>1.2.0-SNAPSHOT</version>
                         <classifier>mule-plugin</classifier>
                     </dependency>
                     <dependency>
@@ -281,6 +284,11 @@
             <artifactId>assertions</artifactId>
             <version>1.0.2</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mule.sdk</groupId>
+            <artifactId>mule-sdk-api</artifactId>
+            <version>0.7.0-rc12</version>
         </dependency>
     </dependencies>
 
