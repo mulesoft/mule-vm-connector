@@ -125,7 +125,7 @@
                 <version>${munit.extensions.maven.plugin.version}</version>
                 <configuration>
                     <runtimeProduct>MULE_EE</runtimeProduct>
-                    <runtimeVersion>4.4.0-20230522</runtimeVersion>
+                    <runtimeVersion>${runtimeVersion}</runtimeVersion>
                     <argLines>
                         <argLine>
                             -javaagent:${settings.localRepository}/org/jacoco/org.jacoco.agent/${jacoco.version}/org.jacoco.agent-${jacoco.version}-runtime.jar=destfile=${session.executionRootDirectory}/target/jacoco-munit.exec
@@ -288,7 +288,7 @@
         <dependency>
             <groupId>org.mule.sdk</groupId>
             <artifactId>mule-sdk-api</artifactId>
-            <version>0.7.0-rc12</version>
+            <version>0.7.0</version>
         </dependency>
     </dependencies>
 
