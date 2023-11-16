@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:mtf="http://www.mulesoft.org/schema/mule/mtf"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/mtf  http://www.mulesoft.org/schema/mule/mtf/current/mule-mtf.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+
+    <munit:config name="QueueNamesValueProviderTestCase.xml" />
+
+    <mtf:tooling-test name="get-queue-names-test" description="Test that value provider works">
+        <mtf:get-values parameter="queueName" >
+            <vm:publish config-ref="VM_Config" queueName="persistentQueue">
+                <vm:content >
+                    <![CDATA[#["publish message"]]]>
+                </vm:content>
+            </vm:publish>
+        </mtf:get-values>
+        <mtf:validation>
+            <munit-tools:assert-that expression="#[
+            %dw 2.0
+            output application/json
+            var queues = payload pluck $$ as String
+            ---
+            queues == ['transientQueue','persistentQueue']
+            ]"
+                                     is="#[MunitTools::equalTo(true)]"/>
+        </mtf:validation>
+    </mtf:tooling-test>
+
+</mule>
