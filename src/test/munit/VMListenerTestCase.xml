@@ -115,7 +115,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
             <munit:enable-flow-source value="vm-listener-transient-queue-flow" />
         </munit:enable-flow-sources>
         <munit:behavior>
-            <scripting:execute engine="ECMAScript" >
+            <scripting:execute engine="groovy" >
                 <scripting:code >
                     <![CDATA[
                         flow = registry.lookupByName("vm-listener-transient-queue-flow").get();
