@@ -26,7 +26,7 @@
         <muleTestsComponentPlugin>${mule.version}</muleTestsComponentPlugin>
 
         <jacoco.version>0.8.10</jacoco.version>
-        <mavenResources.version>3.0.2</mavenResources.version>
+        <mavenResources.version>3.3.1</mavenResources.version>
 
         <munit.input.directory>src/test/munit</munit.input.directory>
         <munit.citizen.input.directory>src/test/munit-citizen</munit.citizen.input.directory>
