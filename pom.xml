@@ -32,7 +32,7 @@
         <munit.citizen.input.directory>src/test/munit-citizen</munit.citizen.input.directory>
         <munit.output.directory>${basedir}/target/test-mule/munit</munit.output.directory>
         <munit.extensions.maven.plugin.version>1.2.0-rc2</munit.extensions.maven.plugin.version>
-        <munit.version>3.1.0-r3</munit.version>
+        <munit.version>3.1.0-rc3</munit.version>
         <mtf.tools.version>1.2.0-rc1</mtf.tools.version>
 
         <mtf.javaopts></mtf.javaopts>
@@ -42,6 +42,9 @@
         <mule.java.module.version>1.2.12</mule.java.module.version>
         <mule.objectstore.connector.version>1.2.2</mule.objectstore.connector.version>
         <mule.scripting.module.version>2.1.0-SNAPSHOT</mule.scripting.module.version>
+
+        <!-- runtime version to run MUnit tests-->
+        <runtimeVersion>4.1.1</runtimeVersion>
     </properties>
 
     <distributionManagement>
