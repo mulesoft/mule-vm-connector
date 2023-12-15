@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+
+    <munit:config name="VMConsumeTestCase.xml" />
+
+    <munit:test name="consume-typed-value-test" description="Test the consume operation on a transient queue">
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+            <flow-ref name="publish-transient-flow"/>
+        </munit:behavior>
+        <munit:execution>
+            <vm:consume queueName="transientQueue" config-ref="VM_Config" />
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo(vars.payload)]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="empty-queue-test" expectedErrorType="VM:EMPTY_QUEUE" description="Test the consume operation on an empty queue and expect an exception to be thrown">
+        <munit:execution>
+            <vm:consume queueName="transientQueue" config-ref="VM_Config" />
+        </munit:execution>
+    </munit:test>
+
+    <flow name="publish-transient-flow">
+        <vm:publish queueName="transientQueue" config-ref="VM_Config">
+            <vm:content>#[vars.payload]</vm:content>
+        </vm:publish>
+    </flow>
+
+</mule>

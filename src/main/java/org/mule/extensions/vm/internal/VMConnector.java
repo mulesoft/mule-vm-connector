@@ -32,6 +32,12 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.RefName;
 import org.mule.runtime.extension.api.runtime.parameter.OutboundCorrelationStrategy;
 
+import org.mule.sdk.api.annotation.JavaVersionSupport;
+
+import static org.mule.sdk.api.meta.JavaVersion.JAVA_8;
+import static org.mule.sdk.api.meta.JavaVersion.JAVA_11;
+import static org.mule.sdk.api.meta.JavaVersion.JAVA_17;
+
 import javax.inject.Inject;
 
 import java.util.List;
@@ -61,6 +67,7 @@ import java.util.List;
 @Operations(VMOperations.class)
 @ConnectionProviders(VMConnectionProvider.class)
 @ErrorTypes(VMError.class)
+@JavaVersionSupport({JAVA_8, JAVA_11, JAVA_17})
 public class VMConnector implements Startable, Stoppable {
 
   @Inject

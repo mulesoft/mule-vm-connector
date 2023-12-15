@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+
+    <munit:config name="VMPublishTestCase.xml" />
+
+    <munit:test name="publish-to-transient-test" description="Test the Publish operation to a transient queue">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-transient-queue-flow-for-publish" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "text": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish queueName="transientQueue" config-ref="VM_Config">
+                <vm:content>#[vars.payload]</vm:content>
+            </vm:publish>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.payload]"
+                                     is="#[MunitTools::equalTo(vars.payload)]"/>
+            <munit-tools:assert-that expression="#[payload.payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('transientQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="publish-to-persistent-test" description="Test the Publish operation to a persistent queue">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-persistent-queue-flow-for-publish" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "text": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish queueName="persistentQueue" config-ref="VM_Config">
+                <vm:content>#[vars.payload]</vm:content>
+            </vm:publish>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.payload]"
+                                     is="#[MunitTools::equalTo(vars.payload)]"/>
+            <munit-tools:assert-that expression="#[payload.payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('persistentQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="publish-with-default-correlation-id-test" description="Test the publish operation with the default correlationId">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-transient-queue-flow-for-publish" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <tracing:with-correlation-id correlationId="#['myCorrelationId']">
+                <vm:publish queueName="transientQueue" config-ref="VM_Config">
+                    <vm:content><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "text": "Hello"
+}]]></vm:content>
+                </vm:publish>
+            </tracing:with-correlation-id>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.attributes.correlationId]"
+                                     is="#[MunitTools::equalTo('myCorrelationId')]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('transientQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="publish-with-custom-correlation-id-test" description="Test the publish operation with a custom correlationId">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-transient-queue-flow-for-publish" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <set-variable variableName="customCorrelationId" value="customCorrId" />
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish queueName="transientQueue" config-ref="VM_Config" correlationId="customCorrId">
+                <vm:content><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "text": "Hello"
+}]]></vm:content>
+            </vm:publish>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.attributes.correlationId]"
+                                     is="#[MunitTools::equalTo(vars.customCorrelationId)]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('transientQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="never-send-correlation-id-with-publish-operation-test" description="Test the publish operation and never send a correlationId">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-transient-queue-flow-for-publish" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <vm:publish queueName="transientQueue" config-ref="VM_Config" correlationId="myCorrId" sendCorrelationId="NEVER">
+                <vm:content><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "text": "Hello"
+}]]></vm:content>
+            </vm:publish>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.attributes.correlationId]"
+                                     is="#[MunitTools::not(MunitTools::equalTo('myCorrId'))]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('transientQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <flow name="vm-listener-transient-queue-flow-for-publish">
+        <vm:listener config-ref="VM_Config" queueName="transientQueue"/>
+        <munit-tools:store key="listenerData">
+            <munit-tools:value ><![CDATA[#[
+            output application/json
+            ---
+            {
+                "payload": payload,
+                "attributes": message.attributes,
+                "attributesClassType": message.attributes.^class
+            }
+            ]]]></munit-tools:value>
+        </munit-tools:store>
+    </flow>
+
+    <flow name="vm-listener-persistent-queue-flow-for-publish">
+        <vm:listener config-ref="VM_Config" queueName="persistentQueue"/>
+        <munit-tools:store key="listenerData">
+            <munit-tools:value ><![CDATA[#[
+            output application/json
+            ---
+            {
+                "payload": payload,
+                "attributes": message.attributes,
+                "attributesClassType": message.attributes.^class
+            }
+            ]]]></munit-tools:value>
+        </munit-tools:store>
+    </flow>
+
+</mule>

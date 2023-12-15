@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing"
+        xmlns:http="http://www.mulesoft.org/schema/mule/http"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd">
+
+    <munit:config name="VMPublishConsumeTestCase.xml"/>
+
+    <munit:test name="publish-consume-test" description="Test the publish-consume operation with a transient queue">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="VM_listener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish-consume queueName="transientQueue" config-ref="VM_Config">
+                <vm:content ><![CDATA[#[vars.payload]]]></vm:content>
+            </vm:publish-consume>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo('hello')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <!-- Works only with minMuleVersion 4.4.0 -->
+    <munit:test name="transactional-publish-consume-test"  description="Test the publish-consume operation with a transient queue in a transactional try block">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="VM_listener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <!-- Works only with minMuleVersion 4.4.0 and MUnit 2.3.13 -->
+            <try transactionalAction="ALWAYS_BEGIN">
+                <vm:publish-consume queueName="transientQueue" config-ref="VM_Config">
+                    <vm:content ><![CDATA[#[vars.payload]]]></vm:content>
+                </vm:publish-consume>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo('hello')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test ignore="false" name="publish-consume-with-default-correlation-id-test" description="Test the publish-consume operation with the default correlationId">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="VM_listener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <tracing:with-correlation-id correlationId="#['myCorrelationId']">
+                <vm:publish-consume queueName="transientQueue" config-ref="VM_Config">
+                    <vm:content><![CDATA[#[vars.payload]]]></vm:content>
+                </vm:publish-consume>
+            </tracing:with-correlation-id>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[message.attributes.correlationId]"
+                                     is="#[MunitTools::equalTo('myCorrelationId')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo('hello')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="publish-consume-with-custom-correlation-id-test" description="Test the publish-consume operation with a custom correlationId">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="VM_listener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish-consume queueName="transientQueue" correlationId="myCustomCorrelationId" config-ref="VM_Config">
+                <vm:content><![CDATA[#[vars.payload]]]></vm:content>
+            </vm:publish-consume>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo('hello')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+            <munit-tools:assert-that expression="#[message.attributes.correlationId]"
+                                     is="#[MunitTools::equalTo('myCustomCorrelationId')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="never-send-correlation-id-test" description="Test the publish-consume operation and never send a correlationId">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="VM_listener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish-consume queueName="transientQueue" correlationId="myCustomCorrelationId" sendCorrelationId="NEVER" config-ref="VM_Config">
+                <vm:content><![CDATA[#[vars.payload]]]></vm:content>
+            </vm:publish-consume>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo('hello')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+            <munit-tools:assert-that expression="#[message.attributes.correlationId]"
+                                     is="#[MunitTools::not(MunitTools::equalTo('myCustomCorrelationId'))]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="on-error-continue-test" description="Test behavior with on-error-continue when exception is thrown">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="VM_onErrorContinueListener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <ee:transform doc:name="Transform Message">
+                <ee:message>
+                    <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ ---
+{
+    "salute": "Hello"
+}]]></ee:set-payload>
+                </ee:message>
+            </ee:transform>
+            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+            <munit-tools:mock-when processor="mule:set-variable">
+                <munit-tools:then-return >
+                    <munit-tools:error typeId="VM:PUBLISH_CONSUMER_FLOW_ERROR" />
+                </munit-tools:then-return>
+            </munit-tools:mock-when>
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish-consume queueName="transientQueue" config-ref="VM_Config">
+                <vm:content><![CDATA[#[vars.payload]]]></vm:content>
+            </vm:publish-consume>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:verify-call processor="mule:logger"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo('hello')]"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::withMediaType('application/json')]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="on-error-propagate-test" description="Test behavior with on-error-propagate when exception is thrown">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="VM_onErrorPropagateListener" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <munit-tools:mock-when processor="mule:set-variable">
+                <munit-tools:then-return >
+                    <munit-tools:error typeId="VM:PUBLISH_CONSUMER_FLOW_ERROR" />
+                </munit-tools:then-return>
+            </munit-tools:mock-when>
+        </munit:behavior>
+        <munit:execution>
+            <try>
+                <vm:publish-consume queueName="onErrorPropagate" config-ref="onError">
+                    <vm:content><![CDATA[#["hello"]]]></vm:content>
+                </vm:publish-consume>
+                <error-handler >
+                    <on-error-continue type="VM:PUBLISH_CONSUMER_FLOW_ERROR"/>
+                </error-handler>
+            </try>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:verify-call processor="mule:logger"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="publish-to-failing-queue-test" expectedErrorType="VM:PUBLISH_CONSUMER_FLOW_ERROR" description="Test behavior on a flow with failing queue">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="VM_failListener" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <vm:publish-consume queueName="persistentQueue" config-ref="VM_Config"/>
+        </munit:execution>
+    </munit:test>
+
+    <flow name="VM_listener" initialState="stopped">
+        <vm:listener queueName="transientQueue" config-ref="VM_Config">
+            <vm:response>
+                <vm:content>
+                    #[lower(payload.salute)]
+                </vm:content>
+            </vm:response>
+        </vm:listener>
+        <munit-tools:store key="listenerData"/>
+    </flow>
+
+    <flow name="VM_onErrorContinueListener" initialState="stopped">
+        <vm:listener queueName="transientQueue" config-ref="VM_Config">
+            <vm:response>
+                <vm:content>
+                    #[lower(payload.salute)]
+                </vm:content>
+            </vm:response>
+        </vm:listener>
+        <set-variable value="dummy" variableName="dummy" />
+        <error-handler >
+            <on-error-continue >
+                <logger />
+            </on-error-continue>
+        </error-handler>
+    </flow>
+
+    <flow name="VM_onErrorPropagateListener" initialState="stopped">
+        <vm:listener queueName="onErrorPropagate" config-ref="onError" />
+        <set-variable value="dummy" variableName="dummy" />
+        <error-handler >
+            <on-error-propagate type="VM:PUBLISH_CONSUMER_FLOW_ERROR">
+                <logger />
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+
+    <flow name="VM_failListener" initialState="stopped">
+        <vm:listener queueName="persistentQueue" config-ref="VM_Config" />
+        <raise-error type="ROUTING" />
+    </flow>
+
+</mule>
