@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+        xmlns:os="http://www.mulesoft.org/schema/mule/os"
+        xmlns:java="http://www.mulesoft.org/schema/mule/java"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+
+    <munit:config name="VMListenerTestCase.xml" />
+
+    <os:object-store name="Object_store" doc:name="Object store" doc:id="8148f428-08ba-4117-8f2d-ba7940013825" />
+
+    <munit:test name="listen-on-transient-queue-test" description="Test the VMListener with a transient queue">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-transient-queue-flow" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <java:new class="java.lang.String" constructor="String(java.lang.String)">
+                <java:args ><![CDATA[#["arg0": "message"]]]></java:args>
+            </java:new>
+            <munit-tools:queue queueName="transientQueue">
+                <munit-tools:value>#[payload]</munit-tools:value>
+            </munit-tools:queue>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.payload]"
+                                     is="#[MunitTools::equalTo('message')]"/>
+            <munit-tools:assert-that expression="#[payload.payloadMimeType]"
+                                     is="#[MunitTools::equalTo('application/java')]"/>
+            <munit-tools:assert-that expression="#[payload.payloadClassType]"
+                                     is="#[MunitTools::equalTo('java.lang.String')]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('transientQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="listen-one-at-a-time-test" description="Test the Listener in a synchronous scenario">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="VM_synchronousListener" />
+        </munit:enable-flow-sources>
+        <munit:behavior >
+            <os:store doc:name="Store" doc:id="5957fc78-d358-4fd0-8dbf-ea544ae3e3ad" key="timestamps" objectStore="Object_store">
+                <os:value ><![CDATA[#[[]]]]></os:value>
+            </os:store>
+        </munit:behavior>
+        <munit:execution>
+            <set-payload value="#['message']"/>
+            <foreach collection="#[1 to 3]">
+                <flow-ref name="VM_publishToSyncQueue"/>
+            </foreach>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <os:retrieve doc:name="Retrieve" doc:id="8fd9e44c-8e18-4552-a577-1055374c6ec4" key="timestamps" objectStore="Object_store"/>
+                <munit-tools:assert-that expression="#[payload]"
+                                         is="#[MunitTools::hasSize(MunitTools::equalTo(3))]"/>
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload[2]]"
+                                     is="#[MunitTools::greaterThan(payload[1])]"/>
+            <munit-tools:assert-that expression="#[payload[1]]"
+                                     is="#[MunitTools::greaterThan(payload[0])]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="listen-on-persistent-queue-test" description="Test the VMListener with a persistent queue">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-persistent-queue-flow" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <java:new class="java.lang.String" constructor="String(java.lang.String)">
+                <java:args ><![CDATA[#["arg0": "message"]]]></java:args>
+            </java:new>
+            <flow-ref name="VM_publishToPersistentQueueFlow"/>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload.payload]"
+                                     is="#[MunitTools::equalTo('message')]"/>
+            <munit-tools:assert-that expression="#[payload.payloadMimeType]"
+                                     is="#[MunitTools::equalTo('application/java')]"/>
+            <munit-tools:assert-that expression="#[payload.payloadClassType]"
+                                     is="#[MunitTools::equalTo('java.lang.String')]"/>
+            <munit-tools:assert-that expression="#[payload.attributesClassType]"
+                                     is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
+            <munit-tools:assert-that expression="#[payload.attributes.queueName]"
+                                     is="#[MunitTools::equalTo('persistentQueue')]"/>
+            <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
+                                     is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
+        </munit:validation>
+    </munit:test>
+
+    <munit:test name="consumers-stopped-test" expectedErrorType="MUNIT-TOOLS:MISSING_KEY" description="Test no event is created when using a stopped flow with a VM Listener">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="vm-listener-transient-queue-flow" />
+        </munit:enable-flow-sources>
+        <munit:behavior>
+            <scripting:execute engine="groovy" >
+                <scripting:code >
+                    <![CDATA[
+                        flow = registry.lookupByName("vm-listener-transient-queue-flow").get();
+                        if (flow.isStarted())
+	                        flow.stop()
+                    ]]>
+                </scripting:code>
+            </scripting:execute>
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish queueName="transientQueue" config-ref="VM_Config" >
+                <vm:content><![CDATA[#["message"]]]></vm:content>
+            </vm:publish>
+            <until-successful maxRetries="5"  millisBetweenRetries="2000">
+                <munit-tools:retrieve key="listenerData" />
+            </until-successful>
+        </munit:execution>
+    </munit:test>
+
+    <flow name="vm-listener-transient-queue-flow">
+        <vm:listener config-ref="VM_Config" queueName="transientQueue"/>
+        <munit-tools:store key="listenerData">
+            <munit-tools:value ><![CDATA[#[
+            output application/json
+            ---
+            {
+                "payload": payload,
+                "payloadMimeType": payload.^mimeType,
+                "payloadClassType": payload.^class,
+                "attributes": message.attributes,
+                "attributesClassType": message.attributes.^class
+            }
+            ]]]></munit-tools:value>
+        </munit-tools:store>
+    </flow>
+
+    <flow name="vm-listener-persistent-queue-flow" >
+        <vm:listener config-ref="VM_Config" queueName="persistentQueue"/>
+        <munit-tools:store key="listenerData">
+            <munit-tools:value ><![CDATA[#[
+            output application/json
+            ---
+            {
+                "payload": payload,
+                "payloadMimeType": payload.^mimeType,
+                "payloadClassType": payload.^class,
+                "attributes": message.attributes,
+                "attributesClassType": message.attributes.^class
+            }
+            ]]]></munit-tools:value>
+        </munit-tools:store>
+    </flow>
+
+    <flow name="VM_publishToSyncQueue">
+        <vm:publish queueName="synchronousQueue" config-ref="sync" transactionalAction="JOIN_IF_POSSIBLE"/>
+    </flow>
+
+    <flow name="VM_publishToPersistentQueueFlow">
+        <vm:publish queueName="persistentQueue" config-ref="VM_Config" />
+    </flow>
+
+    <flow name="VM_synchronousListener" maxConcurrency="1">
+        <vm:listener queueName="synchronousQueue" numberOfConsumers="1" config-ref="sync" transactionalAction="ALWAYS_BEGIN"/>
+        <os:retrieve doc:name="Retrieve" doc:id="8e2f31e9-f101-4b82-a941-2bd971c00ddd" key="timestamps" objectStore="Object_store"/>
+        <os:store doc:name="Store" doc:id="243ada9b-76fa-46c7-9d06-9c71806c2f3f" objectStore="Object_store" key="timestamps">
+            <os:value ><![CDATA[#[payload as Array ++ [now() as String {format: 'y-MM-dd:hh:mm:ss:SSS'}]]]]></os:value>
+        </os:store>
+    </flow>
+
+</mule>

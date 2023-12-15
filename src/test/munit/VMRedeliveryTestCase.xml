@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+        xmlns:os="http://www.mulesoft.org/schema/mule/os"
+        xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+        xmlns="http://www.mulesoft.org/schema/mule/core"
+        xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+        xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+        xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+
+    <munit:config name="VMRedeliveryTestCase.xml" />
+
+    <os:object-store name="Object_store_redelivery" />
+
+    <munit:test name="redelivery-test" description="Test the redelivery scenario">
+        <munit:enable-flow-sources >
+            <munit:enable-flow-source value="redeliveryListener" />
+        </munit:enable-flow-sources>
+        <munit:behavior >
+            <os:store key="redeliveryCount" objectStore="Object_store_redelivery">
+                <os:value ><![CDATA[#[0]]]></os:value>
+            </os:store>
+        </munit:behavior>
+        <munit:execution>
+            <vm:publish queueName="persistentQueue" config-ref="VM_Config">
+                <vm:content>#["message"]</vm:content>
+            </vm:publish>
+            <until-successful maxRetries="10"  millisBetweenRetries="2000">
+                <os:retrieve key="redeliveryExhausted" objectStore="Object_store_redelivery"/>
+            </until-successful>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo(true)]"/>
+            <os:retrieve key="redeliveryCount" objectStore="Object_store_redelivery"/>
+            <munit-tools:assert-that expression="#[payload]"
+                                     is="#[MunitTools::equalTo(4)]"/>
+        </munit:validation>
+    </munit:test>
+
+    <flow name="redeliveryListener">
+        <vm:listener config-ref="VM_Config" queueName="persistentQueue" transactionalAction="ALWAYS_BEGIN">
+            <redelivery-policy maxRedeliveryCount="3"/>
+        </vm:listener>
+
+        <raise-error type="ANY:EXPECTED_ERROR_RAISED" />
+        <error-handler>
+            <on-error-propagate type="REDELIVERY_EXHAUSTED">
+                <os:store objectStore="Object_store_redelivery" key="redeliveryExhausted">
+                    <os:value ><![CDATA[#[true]]]></os:value>
+                </os:store>
+            </on-error-propagate>
+            <on-error-propagate>
+                <os:retrieve key="redeliveryCount" objectStore="Object_store_redelivery"/>
+                <os:store objectStore="Object_store_redelivery" key="redeliveryCount">
+                    <os:value ><![CDATA[#[payload as Number +1]]]></os:value>
+                </os:store>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+
+</mule>
