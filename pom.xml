@@ -37,7 +37,7 @@
 
         <mtf.javaopts></mtf.javaopts>
 
-        <mule.http.connector.version>1.9.0-SNAPSHOT</mule.http.connector.version>
+        <mule.http.connector.version>1.9.0</mule.http.connector.version>
         <mule.sockets.connector.version>1.2.4</mule.sockets.connector.version>
         <mule.java.module.version>1.2.12</mule.java.module.version>
         <mule.objectstore.connector.version>1.2.2</mule.objectstore.connector.version>
