@@ -31,13 +31,13 @@
         <munit.input.directory>src/test/munit</munit.input.directory>
         <munit.citizen.input.directory>src/test/munit-citizen</munit.citizen.input.directory>
         <munit.output.directory>${basedir}/target/test-mule/munit</munit.output.directory>
-        <munit.extensions.maven.plugin.version>1.2.0-SNAPSHOT</munit.extensions.maven.plugin.version>
-        <munit.version>3.1.0-SNAPSHOT</munit.version>
+        <munit.extensions.maven.plugin.version>1.2.0-rc4</munit.extensions.maven.plugin.version>
+        <munit.version>3.1.0-rc5</munit.version>
 
         <mtf.javaopts></mtf.javaopts>
 
         <!-- runtime version to run -->
-        <runtimeVersion>4.6.0-SNAPSHOT</runtimeVersion>
+        <runtimeVersion>4.6.0-rc4</runtimeVersion>
     </properties>
 
     <distributionManagement>
@@ -167,7 +167,7 @@
                     <dependency>
                         <groupId>org.mule.connectors</groupId>
                         <artifactId>mule-http-connector</artifactId>
-                        <version>1.9.0-SNAPSHOT</version>
+                        <version>1.9.0</version>
                         <classifier>mule-plugin</classifier>
                     </dependency>
                     <dependency>
@@ -179,7 +179,7 @@
                     <dependency>
                         <groupId>com.mulesoft.munit</groupId>
                         <artifactId>mtf-tools</artifactId>
-                        <version>1.2.0-SNAPSHOT</version>
+                        <version>1.2.0-rc1</version>
                         <classifier>mule-plugin</classifier>
                     </dependency>
                     <dependency>
