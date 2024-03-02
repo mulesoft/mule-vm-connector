@@ -203,7 +203,7 @@
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-all</artifactId>
-                        <version>2.4.21</version>
+                        <version>3.0.21</version>
                         <classifier>indy</classifier>
                     </dependency>
                     <!-- Needs minMuleVersion 4.4.0 -->
