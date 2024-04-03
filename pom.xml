@@ -25,7 +25,7 @@
         <formatterConfigPath>formatter.xml</formatterConfigPath>
         <muleTestsComponentPlugin>${mule.version}</muleTestsComponentPlugin>
 
-        <jacoco.version>0.8.10</jacoco.version>
+        <jacoco.version>0.8.12</jacoco.version>
         <mavenResources.version>3.0.2</mavenResources.version>
 
         <munit.input.directory>src/test/munit</munit.input.directory>
