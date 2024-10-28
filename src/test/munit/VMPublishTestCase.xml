@@ -73,7 +73,7 @@ output application/json
             <set-variable doc:name="Set Variable" variableName="message" value="#[payload]" />
         </munit:behavior>
         <munit:execution>
-            <vm:publish queueName="persistentQueue" config-ref="VM_Config">
+            <vm:publish queueName="persistentQueueToPublishTest" config-ref="VM_Config">
                 <vm:content>#[vars.message]</vm:content>
             </vm:publish>
             <until-successful maxRetries="10"  millisBetweenRetries="2000">
@@ -88,7 +88,7 @@ output application/json
             <munit-tools:assert-that expression="#[payload.attributesClassType]"
                                      is="#[MunitTools::equalTo('org.mule.extensions.vm.api.VMMessageAttributes')]"/>
             <munit-tools:assert-that expression="#[payload.attributes.queueName]"
-                                     is="#[MunitTools::equalTo('persistentQueue')]"/>
+                                     is="#[MunitTools::equalTo('persistentQueueToPublishTest')]"/>
             <munit-tools:assert-that expression="#[now() as String {format: 'y-MM-dd:hh:mm:ss'}]"
                                      is="#[MunitTools::greaterThanOrEqualTo(payload.attributes.timestamp as DateTime as String {format: 'y-MM-dd:hh:mm:ss'})]"/>
         </munit:validation>
@@ -202,7 +202,7 @@ output application/json
     </flow>
 
     <flow name="vm-listener-persistent-queue-flow-for-publish">
-        <vm:listener config-ref="VM_Config" queueName="persistentQueue"/>
+        <vm:listener config-ref="VM_Config" queueName="persistentQueueToPublishTest"/>
         <munit-tools:store key="listenerData">
             <munit-tools:value ><![CDATA[#[
             output application/json
