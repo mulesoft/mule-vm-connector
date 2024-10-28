@@ -70,11 +70,11 @@ output application/json
 }]]></ee:set-payload>
                 </ee:message>
             </ee:transform>
-            <set-variable doc:name="Set Variable" variableName="payload" value="#[payload]" />
+            <set-variable doc:name="Set Variable" variableName="message" value="#[payload]" />
         </munit:behavior>
         <munit:execution>
             <vm:publish queueName="persistentQueue" config-ref="VM_Config">
-                <vm:content>#[vars.payload]</vm:content>
+                <vm:content>#[vars.message]</vm:content>
             </vm:publish>
             <until-successful maxRetries="10"  millisBetweenRetries="2000">
                 <munit-tools:retrieve key="listenerData" />
@@ -82,7 +82,7 @@ output application/json
         </munit:execution>
         <munit:validation>
             <munit-tools:assert-that expression="#[payload.payload]"
-                                     is="#[MunitTools::equalTo(vars.payload)]"/>
+                                     is="#[MunitTools::equalTo(vars.message)]"/>
             <munit-tools:assert-that expression="#[payload.payload]"
                                      is="#[MunitTools::withMediaType('application/json')]"/>
             <munit-tools:assert-that expression="#[payload.attributesClassType]"
