@@ -52,7 +52,6 @@ public class VMRedeliveryTestCase extends VMTestCase {
   }
 
   @Test
-  @Ignore
   public void redelivery() throws Exception {
     Queue queue = getQueue("persistentQueue");
     queue.offer(STRING_PAYLOAD, TIMEOUT);
