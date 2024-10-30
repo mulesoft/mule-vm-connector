@@ -20,7 +20,7 @@ http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/
 
     <mtf:tooling-test name="get-queue-names-test" description="Test that value provider works">
         <mtf:get-values parameter="queueName" >
-            <vm:publish config-ref="VM_Config" queueName="persistentQueue">
+            <vm:publish config-ref="VM_Config" queueName="persistentQueueToPublishTest">
                 <vm:content >
                     <![CDATA[#["publish message"]]]>
                 </vm:content>
@@ -32,7 +32,7 @@ http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/
             output application/json
             var queues = payload pluck $$ as String
             ---
-            queues == ['transientQueue','persistentQueue']
+            queues == ['persistentQueueToPublishTest','transientQueue','persistentQueue']
             ]"
                                      is="#[MunitTools::equalTo(true)]"/>
         </mtf:validation>
