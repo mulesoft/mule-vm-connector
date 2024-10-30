@@ -31,8 +31,8 @@
         <munit.input.directory>src/test/munit</munit.input.directory>
         <munit.citizen.input.directory>src/test/munit-citizen</munit.citizen.input.directory>
         <munit.output.directory>${basedir}/target/test-mule/munit</munit.output.directory>
-        <munit.extensions.maven.plugin.version>1.2.0-rc2</munit.extensions.maven.plugin.version>
-        <munit.version>3.1.0-rc3</munit.version>
+        <munit.extensions.maven.plugin.version>1.4.0</munit.extensions.maven.plugin.version>
+        <munit.version>3.3.1</munit.version>
         <mtf.tools.version>1.2.0-rc1</mtf.tools.version>
 
         <mtf.javaopts></mtf.javaopts>

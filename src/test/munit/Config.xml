@@ -14,6 +14,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
         <vm:queues >
             <vm:queue queueName="transientQueue" queueType="TRANSIENT" />
             <vm:queue queueName="persistentQueue" queueType="PERSISTENT" />
+            <vm:queue queueName="persistentQueueToPublishTest" queueType="PERSISTENT" />
         </vm:queues>
     </vm:config>
 

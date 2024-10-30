@@ -7,6 +7,7 @@
 package org.mule.extensions.vm.test;
 
 import static org.mule.tck.probe.PollingProber.check;
+
 import org.mule.runtime.api.exception.MuleException;
 import org.mule.runtime.core.api.event.CoreEvent;
 import org.mule.runtime.core.api.processor.Processor;
