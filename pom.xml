@@ -33,10 +33,8 @@
         <munit.output.directory>${basedir}/target/test-mule/munit</munit.output.directory>
         <munit.extensions.maven.plugin.version>1.4.0</munit.extensions.maven.plugin.version>
         <munit.version>3.3.2</munit.version>
-        <mtf.tools.version>1.2.0-rc1</mtf.tools.version>
-
+        <mtf.tools.version>1.2.0</mtf.tools.version>
         <mtf.javaopts></mtf.javaopts>
-
         <mule.http.connector.version>1.9.0</mule.http.connector.version>
         <mule.sockets.connector.version>1.2.4</mule.sockets.connector.version>
         <mule.java.module.version>1.2.12</mule.java.module.version>
