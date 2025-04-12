@@ -39,7 +39,7 @@
         <mule.sockets.connector.version>1.2.4</mule.sockets.connector.version>
         <mule.java.module.version>1.2.12</mule.java.module.version>
         <mule.objectstore.connector.version>1.2.2</mule.objectstore.connector.version>
-        <mule.scripting.module.version>2.1.0</mule.scripting.module.version>
+        <mule.scripting.module.version>2.1.1</mule.scripting.module.version>
 
         <!-- runtime version to run MUnit tests-->
         <runtimeVersion>4.1.1</runtimeVersion>
